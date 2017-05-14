@@ -1,17 +1,12 @@
 #!/usr/bin/env python3
 import json
 import sys
+import os
+from lib import task, tasks, init_redis
+from pprint import pprint
 
-def init_redis():
-    import redis
-
-    return redis.StrictRedis(
-        host='localhost',
-        port=6379,
-        db=1
-    )
-
-def load_task():
+@task
+def loaddata():
     """loads the graph data obtained from OSM overpass api"""
     data = json.load(open('./overpass/street_graph.json'))
 
@@ -41,8 +36,62 @@ def load_task():
             for tag, value in element['tags'].items():
                 red.set('mapmatch:way:{}:{}'.format(eid, tag), value)
 
-def compute_task():
-    print('compute')
+@task
+def compute():
+    data = json.load(open('./data/route.geojson'))
+    red = init_redis()
+
+    for pos in data['features'][0]['geometry']['coordinates']:
+        print(pos)
+
+        nodes = red.georadius('mapmatch:nodehash', pos[0], pos[1], 15, unit='m')
+
+        for node in nodes:
+            ways = red.lrange('mapmatch:node:{}:ways'.format(node), 0, -1)
+
+            print(ways)
+
+        exit()
+
+@task
+def loadscripts():
+    red = init_redis()
+    red.script_flush()
+
+    with open('./lua/del_redis_keys.lua') as delscript:
+        red.eval(delscript.read(), 0, 'mapmatch:script:*')
+
+    scriptlist = filter(
+        lambda s: s.endswith('.lua'),
+        os.listdir('lua')
+    )
+
+    scripts = dict()
+
+    for script in scriptlist:
+        name = script.split('.')[0]
+
+        with open(os.path.join('lua', script)) as scriptfile:
+            scripts[name] = red.script_load(scriptfile.read())
+            red.set('mapmatch:script:{}'.format(name), scripts[name])
+
+    pprint(scripts)
+
+@task
+def listscripts():
+    red = init_redis()
+
+    scripts = map(
+        lambda s: s.decode('utf8').split(':')[2],
+        red.keys('mapmatch:script:*')
+    )
+
+    for key in scripts:
+        print(key)
+
+@task
+def runscript(scriptname):
+    pass
 
 if __name__ == '__main__':
     if len(sys.argv) < 2:
@@ -51,8 +100,10 @@ if __name__ == '__main__':
 
     task = sys.argv[1]
 
-    if task not in ['load', 'compute']:
+    if task not in tasks:
         sys.stderr.write('Unknown task {}\n'.format(task))
         exit(2)
 
-    locals()[task + '_task']()
+    args = sys.argv[2:]
+
+    locals()[task](*args)
