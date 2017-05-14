@@ -84,8 +84,14 @@ def listscripts():
         print(key)
 
 @task
-def runscript(scriptname):
-    pass
+def runscript(scriptname, *args):
+    sha = red.get('mapmatch:script:{}'.format(scriptname))
+
+    if sha is None:
+        sys.stderr.write('Unknown script {}\n'.format(scriptname))
+        exit(3)
+
+    print(red.evalsha(sha, 0, *args))
 
 if __name__ == '__main__':
     if len(sys.argv) < 2:
