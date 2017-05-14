@@ -8,6 +8,36 @@
 \title{Implementation of Map-Matching}
 \begin{document}
 
-Hi
+\maketitle
+
+\begin{abstract}
+TODO write an abstract
+\end{abstract}
+
+\begin{section}{Algorithm}
+
+From the article.
+
+\begin{enumerate}
+	\item For each GPS position $z_i$, a set of candidate roads $\{r_i^0, r_i^1, \dots, r_i^n\}$ is determined, i.e. a set of all roads within a certain search-radius, for example 200m, around $z_i$.
+
+	\item For each candidate road $r_i^j$, a \emph{measurement probability} is calculated which reflects how likely it is for a vehicle on road $r_i^j$ to emit a GPS measurement having position $z_i$. The probability depends on GPS error characteristics and decreases with increasing distance between road and GPS position.
+
+	\item For each candidate road $r_i^j$ of a GPS position $z_i$, the \emph{transition probability} to all candidate roads $\{r_{i+1}^0, r_{i+1}^1, \dots, r_{i+1}^m\}$ of the next GPS position $z_{i+1}$ is calculated. The transition probability is an exponential function of the difference between the route length and the great circle distance between $z_i$ and $z_{i+1}$. The transition probability calculation therefore requires a shortest path routing between each pair of candidate roads, which is a computationally expensive operation.
+
+	\item The Viterbi dynamic programming algorithm is applied to determine the map-matching solution by selecting the sequence of candidate roads which yields the overall best explanation for the observed GPS trajectory.
+\end{enumerate}
+
+\end{section}
+
+\begin{section}{Tecnology}
+
+\begin{enumerate}
+	\item the Python programming language.
+
+	\item Redis database.
+\end{enumerate}
+
+\end{section}
 
 \end{document}
