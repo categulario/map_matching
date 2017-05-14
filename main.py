@@ -5,12 +5,12 @@ import os
 from lib import task, tasks, init_redis
 from pprint import pprint
 
+red = init_redis()
+
 @task
 def loaddata():
     """loads the graph data obtained from OSM overpass api"""
     data = json.load(open('./overpass/street_graph.json'))
-
-    red = init_redis()
 
     for element in data['elements']:
         etype = element['type']
@@ -39,7 +39,6 @@ def loaddata():
 @task
 def compute():
     data = json.load(open('./data/route.geojson'))
-    red = init_redis()
 
     for pos in data['features'][0]['geometry']['coordinates']:
         print(pos)
@@ -51,11 +50,8 @@ def compute():
 
             print(ways)
 
-        exit()
-
 @task
 def loadscripts():
-    red = init_redis()
     red.script_flush()
 
     with open('./lua/del_redis_keys.lua') as delscript:
@@ -79,8 +75,6 @@ def loadscripts():
 
 @task
 def listscripts():
-    red = init_redis()
-
     scripts = map(
         lambda s: s.decode('utf8').split(':')[2],
         red.keys('mapmatch:script:*')
