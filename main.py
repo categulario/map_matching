@@ -2,21 +2,44 @@
 import json
 import sys
 
+def init_redis():
+    import redis
+
+    return redis.StrictRedis(
+        host='localhost',
+        port=6379,
+        db=1
+    )
+
 def load_task():
     """loads the graph data obtained from OSM overpass api"""
     data = json.load(open('./overpass/street_graph.json'))
 
-    types = dict()
+    red = init_redis()
 
     for element in data['elements']:
         etype = element['type']
+        eid   = element['id']
 
-        if etype in types:
-            types[etype] += 1
-        else:
-            types[etype] = 1
+        if etype == 'node':
+            # load to GEOHASH with ID
+            red.geoadd('mapmatch:nodehash', element['lon'], element['lat'], eid)
+            # add to node count
+            red.pfadd('mapmatch:node:count', eid)
 
-    print(types)
+        elif etype == 'way':
+            # add nodes to way
+            red.rpush('mapmatch:way:{}:nodes'.format(eid), *element['nodes'])
+            # add to way count
+            red.pfadd('mapmatch:way:count', eid)
+
+            # add this way to node relations
+            for node in element['nodes']:
+                red.rpush('mapmatch:node:{}:ways'.format(node), eid)
+
+            # add this way's tags
+            for tag, value in element['tags'].items():
+                red.set('mapmatch:way:{}:{}'.format(eid, tag), value)
 
 def compute_task():
     print('compute')
