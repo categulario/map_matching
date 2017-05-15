@@ -41,14 +41,9 @@ def compute():
     data = json.load(open('./data/route.geojson'))
 
     for pos in data['features'][0]['geometry']['coordinates']:
-        print(pos)
+        runscript('street_names_from_point', *pos)
 
-        nodes = red.georadius('mapmatch:nodehash', pos[0], pos[1], 15, unit='m')
-
-        for node in nodes:
-            ways = red.lrange('mapmatch:node:{}:ways'.format(node), 0, -1)
-
-            print(ways)
+        break
 
 @task
 def loadscripts():
