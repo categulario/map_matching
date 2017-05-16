@@ -30,6 +30,15 @@ From the article.
 
 \end{section}
 
+\begin{section}{Important things to consider}
+\begin{enumerate}
+	\item Currently my approach is to use OSM street data, so the search graph is built by the nodes and not by lines. The search of roads within a radius is performed accordingly.
+	\item The search radius will say how many routes per GPS position you have, thus changing the search graph size.
+	\item For the test route a radius of $100m$ gives a minimum of one graph node and a maximum of 97, $150m$ give a minimum of 3 and maximum of 149, and $200m$ a minimum of 16 and a maximum of 236 nodes.
+	\item You want the solution node to be within the search radius, but a large radius will make the search graph too big.
+\end{enumerate}
+\end{section}
+
 \begin{section}{Tecnology}
 
 \begin{enumerate}

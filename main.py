@@ -3,6 +3,7 @@ import json
 import sys
 import os
 from lib import task, tasks, init_redis
+from lib.geo import distance
 from pprint import pprint
 
 red = init_redis()
@@ -40,10 +41,25 @@ def loaddata():
 def compute():
     data = json.load(open('./data/route.geojson'))
 
-    for pos in data['features'][0]['geometry']['coordinates']:
-        runscript('street_names_from_point', *pos)
+    coordinates = data['features'][0]['geometry']['coordinates']
 
-        break
+    min_matches = float('inf')
+    min_pos = None
+    max_matches = 0
+    max_pos = None
+
+    for pos in coordinates:
+        matches = len(red.georadius('mapmatch:nodehash', pos[0], pos[1], 150, unit='m', withdist=True, sort='ASC'))
+
+        if matches < min_matches:
+            min_matches = matches
+            min_pos = pos
+        if matches > max_matches:
+            max_matches = matches
+            max_pos = pos
+
+    print(min_matches, min_pos)
+    print(max_matches, max_pos)
 
 @task
 def loadscripts():
