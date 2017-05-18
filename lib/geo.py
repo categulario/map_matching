@@ -39,9 +39,6 @@ def line_string(coordinates, properties=None):
         },
         'geometry': {
             'type': 'LineString',
-            'coordinates': list(map(
-                lambda x: [float(x[0]), float(x[1])],
-                (coord[1][0] for coord in coordinates)
-            )),
+            'coordinates': coordinates,
         },
     }

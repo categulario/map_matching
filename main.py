@@ -3,8 +3,9 @@ import json
 import sys
 import os
 from lib import task, tasks, init_redis
-from lib.geo import distance
+from lib.geo import distance, point, line_string
 from pprint import pprint
+from itertools import starmap
 
 red = init_redis()
 
@@ -44,23 +45,22 @@ def compute():
 
     coordinates = data['features'][0]['geometry']['coordinates']
 
-    min_matches = float('inf')
-    min_pos = None
-    max_matches = 0
-    max_pos = None
-
-    for pos in coordinates:
-        matches = len(red.georadius('mapmatch:nodehash', pos[0], pos[1], 150, unit='m', withdist=True, sort='ASC'))
-
-        if matches < min_matches:
-            min_matches = matches
-            min_pos = pos
-        if matches > max_matches:
-            max_matches = matches
-            max_pos = pos
-
-    print(min_matches, min_pos)
-    print(max_matches, max_pos)
+    for i, pos in enumerate(coordinates):
+        return json.dumps({
+            'type': 'FeatureCollection',
+            'features': [
+                point(pos, {'marker-color': '#BE2929'}),
+            ] + list(map(
+                line_string,
+                map(
+                    lambda way: list(map(
+                        lambda node: [float(node[1][0]), float(node[1][1])],
+                        way
+                    )),
+                    runscript('ways_from_node', pos[0], pos[1], 150)
+                )
+            )),
+        })
 
 @task
 def loadscripts():
