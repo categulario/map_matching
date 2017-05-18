@@ -30,13 +30,17 @@ def point(coords, properties=None):
     }
 
 def line_string(coordinates, properties=None):
+    defaults = {
+        'stroke': random_color(),
+        'stroke-width': 4,
+        'stroke-opacity': 1,
+    }
+
+    properties = properties if properties else dict()
+
     return {
         'type': 'Feature',
-        'properties': {
-            'stroke': random_color(),
-            'stroke-width': 4,
-            'stroke-opacity': 1,
-        },
+        'properties': {**defaults, **properties},
         'geometry': {
             'type': 'LineString',
             'coordinates': coordinates,

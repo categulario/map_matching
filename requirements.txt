@@ -1,1 +1,3 @@
 git+https://github.com/andymccurdy/redis-py.git@master#egg=redis
+geojsonio
+hashids

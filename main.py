@@ -6,6 +6,8 @@ from lib import task, tasks, init_redis
 from lib.geo import distance, point, line_string
 from pprint import pprint
 from itertools import starmap
+from functools import partial
+from hashids import Hashids
 
 red = init_redis()
 
@@ -37,6 +39,7 @@ def loaddata():
             # add this way's tags
             for tag, value in element['tags'].items():
                 red.set('mapmatch:way:{}:{}'.format(eid, tag), value)
+
     return 'done'
 
 @task
@@ -44,23 +47,29 @@ def compute():
     data = json.load(open('./data/route.geojson'))
 
     coordinates = data['features'][0]['geometry']['coordinates']
+    hashes = Hashids(salt='a salt', min_length=6, alphabet='0123456789ABCDEF')
 
     for i, pos in enumerate(coordinates):
-        return json.dumps({
+        json.dump({
             'type': 'FeatureCollection',
             'features': [
                 point(pos, {'marker-color': '#BE2929'}),
             ] + list(map(
-                line_string,
+                partial(line_string, properties={
+                    'stroke': '#'+hashes.encode(i),
+                }),
                 map(
                     lambda way: list(map(
                         lambda node: [float(node[1][0]), float(node[1][1])],
                         way
                     )),
-                    runscript('ways_from_node', pos[0], pos[1], 150)
+                    runscript('ways_from_node', pos[0], pos[1], 150, i)
                 )
             )),
-        })
+        }, open('./build/node_{}_streets.geojson'.format(i), 'w'))
+
+        if i==3:
+            break
 
 @task
 def loadscripts():
@@ -83,13 +92,16 @@ def loadscripts():
             scripts[name] = red.script_load(scriptfile.read())
             red.set('mapmatch:script:{}'.format(name), scripts[name])
 
-    return scripts
+    return '\n'.join(starmap(
+        lambda s, h: '{}: {}'.format(s, h),
+        scripts.items()
+    ))
 
 @task
 def listscripts():
     return '\n'.join(map(
-        lambda s: s.decode('utf8').split(':')[2],
-        red.keys('mapmatch:script:*')
+        lambda s: '{}: {}'.format(s[0].decode('utf8').split(':')[2], s[1].decode('utf8')),
+        runscript('list_scripts')
     ))
 
 @task
@@ -119,5 +131,5 @@ if __name__ == '__main__':
 
     if type(val) is str:
         print(val)
-    else:
+    elif val is not None:
         pprint(val)
