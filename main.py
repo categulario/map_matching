@@ -36,6 +36,7 @@ def loaddata():
             # add this way's tags
             for tag, value in element['tags'].items():
                 red.set('mapmatch:way:{}:{}'.format(eid, tag), value)
+    return 'done'
 
 @task
 def compute():
@@ -82,17 +83,14 @@ def loadscripts():
             scripts[name] = red.script_load(scriptfile.read())
             red.set('mapmatch:script:{}'.format(name), scripts[name])
 
-    pprint(scripts)
+    return scripts
 
 @task
 def listscripts():
-    scripts = map(
+    return '\n'.join(map(
         lambda s: s.decode('utf8').split(':')[2],
         red.keys('mapmatch:script:*')
-    )
-
-    for key in scripts:
-        print(key)
+    ))
 
 @task
 def runscript(scriptname, *args):
@@ -102,7 +100,7 @@ def runscript(scriptname, *args):
         sys.stderr.write('Unknown script {}\n'.format(scriptname))
         exit(3)
 
-    print(red.evalsha(sha, 0, *args))
+    return red.evalsha(sha, 0, *args)
 
 if __name__ == '__main__':
     if len(sys.argv) < 2:
@@ -117,4 +115,9 @@ if __name__ == '__main__':
 
     args = sys.argv[2:]
 
-    locals()[task](*args)
+    val = locals()[task](*args)
+
+    if type(val) is str:
+        print(val)
+    else:
+        pprint(val)
