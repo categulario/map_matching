@@ -1,5 +1,6 @@
 # from http://stackoverflow.com/questions/15736995/how-can-i-quickly-estimate-the-distance-between-two-latitude-longitude-points
 from math import radians, cos, sin, asin, sqrt
+from . import random_color
 
 def distance(lon1, lat1, lon2, lat2):
     """
@@ -17,3 +18,30 @@ def distance(lon1, lat1, lon2, lat2):
     m = 6367 * c * 1000
 
     return m
+
+def point(coords, properties=None):
+    return {
+        'type': 'Feature',
+        'properties': properties if properties else dict(),
+        'geometry': {
+            'type': 'Point',
+            'coordinates': coords,
+        },
+    }
+
+def line_string(coordinates, properties=None):
+    return {
+        'type': 'Feature',
+        'properties': {
+            'stroke': random_color(),
+            'stroke-width': 4,
+            'stroke-opacity': 1,
+        },
+        'geometry': {
+            'type': 'LineString',
+            'coordinates': list(map(
+                lambda x: [float(x[0]), float(x[1])],
+                (coord[1][0] for coord in coordinates)
+            )),
+        },
+    }

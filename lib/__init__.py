@@ -1,4 +1,5 @@
 from functools import wraps
+from random import choice
 
 def init_redis():
     import redis
@@ -19,3 +20,6 @@ def task(f):
         return f(*args, **kwds)
 
     return wrapper
+
+def random_color():
+    return '#' + ''.join((choice('0123456789ABCDEF') for i in range(6)))
