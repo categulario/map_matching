@@ -19,6 +19,12 @@ def distance(lon1, lat1, lon2, lat2):
 
     return m
 
+def feature_collection(features):
+    return {
+        'type': 'FeatureCollection',
+        'features': features,
+    }
+
 def point(coords, properties=None):
     return {
         'type': 'Feature',

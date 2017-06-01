@@ -3,7 +3,7 @@ import json
 import sys
 import os
 from lib import task, tasks, init_redis
-from lib.geo import distance, point, line_string
+from lib.geo import distance, point, line_string, feature_collection
 from pprint import pprint
 from itertools import starmap
 from functools import partial
@@ -52,10 +52,9 @@ def compute():
     coordinates = data['features'][0]['geometry']['coordinates']
     hashes = Hashids(salt='a salt', min_length=6, alphabet='0123456789ABCDEF')
 
+    # compute set of near streets for each GPS position z_i
     for i, pos in enumerate(coordinates):
-        json.dump({
-            'type': 'FeatureCollection',
-            'features': [
+        json.dump(feature_collection([
                 point(pos, {'marker-color': '#BE2929'}),
             ] + list(map(
                 partial(line_string, properties={
@@ -69,10 +68,31 @@ def compute():
                     runscript('ways_from_node', pos[0], pos[1], 150, i)
                 )
             )),
-        }, open('./build/node_{}_streets.geojson'.format(i), 'w'))
+        ), open('./build/node_{:03d}_streets.geojson'.format(i), 'w'))
+        print('node streets: {}'.format(i), end='\r', flush=True)
 
-        if i==3:
-            break
+    print()
+
+    for i,j in zip(range(len(coordinates)-1), range(1, len(coordinates))):
+        json.dump(feature_collection([
+                point(coordinates[i], {'marker-color': '#BE2929'}),
+                point(coordinates[j], {'marker-color': '#BE2929'}),
+            ] + list(map(
+                partial(line_string, properties={
+                    'stroke': '#'+hashes.encode(i + j),
+                }),
+                map(
+                    lambda way: list(map(
+                        lambda node: [float(node[1][0]), float(node[1][1])],
+                        way
+                    )),
+                    runscript('ways_from_transition', i, j)
+                )
+            )),
+        ), open('./build/transition_{:03d}_streets.geojson'.format(i, j), 'w'))
+        print('transition streets: {}'.format(i), end='\r', flush=True)
+
+    print()
 
 @task
 def loadscripts():
