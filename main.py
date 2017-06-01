@@ -3,7 +3,7 @@ import json
 import sys
 import os
 from lib import task, tasks, init_redis
-from lib.graph import StreetNode
+from lib.graph import Edge
 from lib.geo import point, line_string, feature_collection
 from pprint import pprint
 from itertools import starmap
@@ -55,16 +55,16 @@ def compute():
     hashes = Hashids(salt='a salt', min_length=6, alphabet='0123456789ABCDEF')
 
     # Using dijskra to find the best route match
-    heap = [StreetNode(0, 0, 'start')]
+    heap = [Edge(0, 0, 'start')]
     path = None
 
     while len(heap) > 0:
         street = heappop(heap)
 
         # add to the heap the nodes reachable from current node
-        for way, dist in runscript('ways_from_node', coordinates[street.layer][0], coordinates[street.layer][1], 150, street.layer):
+        for way, dist in runscript('ways_from_gps', coordinates[street.layer][0], coordinates[street.layer][1], 150, street.layer):
             cost = float(dist)
-            newnode = StreetNode(cost, street.layer+1, way.decode('utf8'), street)
+            newnode = Edge(cost, street.layer+1, way.decode('utf8'), street)
 
             heappush(heap, newnode)
 

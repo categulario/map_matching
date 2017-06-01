@@ -1,7 +1,7 @@
 from functools import total_ordering
 
 @total_ordering
-class StreetNode:
+class Edge:
 
     def __init__(self, weight, layer, name, parent=None):
         self.weight = weight
