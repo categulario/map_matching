@@ -1,4 +1,3 @@
-# from http://stackoverflow.com/questions/15736995/how-can-i-quickly-estimate-the-distance-between-two-latitude-longitude-points
 from math import radians, cos, sin, asin, sqrt
 from . import random_color
 
@@ -6,6 +5,8 @@ def distance(lon1, lat1, lon2, lat2):
     """
     Calculate the great circle distance between two points 
     on the earth (specified in decimal degrees)
+
+    from http://stackoverflow.com/questions/15736995/how-can-i-quickly-estimate-the-distance-between-two-latitude-longitude-points
     """
     # convert decimal degrees to radians 
     lon1, lat1, lon2, lat2 = map(radians, [lon1, lat1, lon2, lat2])
@@ -22,7 +23,7 @@ def distance(lon1, lat1, lon2, lat2):
 def feature_collection(features):
     return {
         'type': 'FeatureCollection',
-        'features': features,
+        'features': list(features),
     }
 
 def point(coords, properties=None):
@@ -31,7 +32,7 @@ def point(coords, properties=None):
         'properties': properties if properties else dict(),
         'geometry': {
             'type': 'Point',
-            'coordinates': coords,
+            'coordinates': list(coords),
         },
     }
 
@@ -49,6 +50,6 @@ def line_string(coordinates, properties=None):
         'properties': {**defaults, **properties},
         'geometry': {
             'type': 'LineString',
-            'coordinates': coordinates,
+            'coordinates': list(coordinates),
         },
     }

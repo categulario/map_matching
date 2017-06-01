@@ -3,11 +3,13 @@ import json
 import sys
 import os
 from lib import task, tasks, init_redis
-from lib.geo import distance, point, line_string, feature_collection
+from lib.graph import StreetNode
+from lib.geo import point, line_string, feature_collection
 from pprint import pprint
 from itertools import starmap
 from functools import partial
 from hashids import Hashids
+from heapq import heappush, heappop
 
 red = init_redis()
 
@@ -52,47 +54,35 @@ def compute():
     coordinates = data['features'][0]['geometry']['coordinates']
     hashes = Hashids(salt='a salt', min_length=6, alphabet='0123456789ABCDEF')
 
-    # compute set of near streets for each GPS position z_i
-    for i, pos in enumerate(coordinates):
-        json.dump(feature_collection([
-                point(pos, {'marker-color': '#BE2929'}),
-            ] + list(map(
-                partial(line_string, properties={
-                    'stroke': '#'+hashes.encode(i),
-                }),
-                map(
-                    lambda way: list(map(
-                        lambda node: [float(node[1][0]), float(node[1][1])],
-                        way
-                    )),
-                    runscript('ways_from_node', pos[0], pos[1], 150, i)
-                )
-            )),
-        ), open('./build/node_{:03d}_streets.geojson'.format(i), 'w'))
-        print('node streets: {}'.format(i), end='\r', flush=True)
+    # Using dijskra to find the best route match
+    heap = [StreetNode(0, 0, 'start')]
+    path = None
 
-    print()
+    while len(heap) > 0:
+        street = heappop(heap)
 
-    for i,j in zip(range(len(coordinates)-1), range(1, len(coordinates))):
-        json.dump(feature_collection([
-                point(coordinates[i], {'marker-color': '#BE2929'}),
-                point(coordinates[j], {'marker-color': '#BE2929'}),
-            ] + list(map(
-                partial(line_string, properties={
-                    'stroke': '#'+hashes.encode(i + j),
-                }),
-                map(
-                    lambda way: list(map(
-                        lambda node: [float(node[1][0]), float(node[1][1])],
-                        way
-                    )),
-                    runscript('ways_from_transition', i, j)
-                )
-            )),
-        ), open('./build/transition_{:03d}_streets.geojson'.format(i, j), 'w'))
-        print('transition streets: {}'.format(i), end='\r', flush=True)
+        # add to the heap the nodes reachable from current node
+        for way, dist in runscript('ways_from_node', coordinates[street.layer][0], coordinates[street.layer][1], 150, street.layer):
+            cost = float(dist)
+            newnode = StreetNode(cost, street.layer+1, way.decode('utf8'), street)
 
-    print()
+            heappush(heap, newnode)
+
+        # last GPS position visited, route finished
+        if street.layer == len(coordinates)-1:
+            break
+
+    curstreet = street
+    streets = set()
+
+    while curstreet != None:
+        if curstreet.name != 'start':
+            streets.add(curstreet.name)
+        curstreet = curstreet.parent
+
+    json.dump(feature_collection(
+        line_string(list(map(lambda x: float(x), nodepos)) for nodepos in runscript('nodes_from_way', street)) for street in streets
+    ), open('./build/result.geojson', 'w'))
 
 @task
 def loadscripts():
