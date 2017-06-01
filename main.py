@@ -15,30 +15,33 @@ red = init_redis()
 def loaddata():
     """loads the graph data obtained from OSM overpass api"""
     data = json.load(open('./overpass/street_graph.json'))
+    total = len(data['elements'])
 
-    for element in data['elements']:
+    for i, element in enumerate(data['elements']):
         etype = element['type']
         eid   = element['id']
 
         if etype == 'node':
             # load to GEOHASH with ID
-            red.geoadd('mapmatch:nodehash', element['lon'], element['lat'], eid)
+            red.geoadd('base:nodehash', element['lon'], element['lat'], eid)
             # add to node count
-            red.pfadd('mapmatch:node:count', eid)
+            red.pfadd('base:node:count', eid)
 
         elif etype == 'way':
             # add nodes to way
-            red.rpush('mapmatch:way:{}:nodes'.format(eid), *element['nodes'])
+            red.rpush('base:way:{}:nodes'.format(eid), *element['nodes'])
             # add to way count
-            red.pfadd('mapmatch:way:count', eid)
+            red.pfadd('base:way:count', eid)
 
             # add this way to node relations
             for node in element['nodes']:
-                red.rpush('mapmatch:node:{}:ways'.format(node), eid)
+                red.rpush('base:node:{}:ways'.format(node), eid)
 
             # add this way's tags
             for tag, value in element['tags'].items():
-                red.set('mapmatch:way:{}:{}'.format(eid, tag), value)
+                red.set('base:way:{}:{}'.format(eid, tag), value)
+
+        print('loaded {}/{}'.format(i+1, total), end='\r', flush=True)
 
     return 'done'
 
@@ -76,7 +79,7 @@ def loadscripts():
     red.script_flush()
 
     with open('./lua/del_redis_keys.lua') as delscript:
-        red.eval(delscript.read(), 0, 'mapmatch:script:*')
+        red.eval(delscript.read(), 0, 'base:script:*')
 
     scriptlist = filter(
         lambda s: s.endswith('.lua'),
@@ -90,7 +93,7 @@ def loadscripts():
 
         with open(os.path.join('lua', script)) as scriptfile:
             scripts[name] = red.script_load(scriptfile.read())
-            red.set('mapmatch:script:{}'.format(name), scripts[name])
+            red.set('base:script:{}'.format(name), scripts[name])
 
     return '\n'.join(starmap(
         lambda s, h: '{}: {}'.format(s, h),
@@ -106,7 +109,7 @@ def listscripts():
 
 @task
 def runscript(scriptname, *args):
-    sha = red.get('mapmatch:script:{}'.format(scriptname))
+    sha = red.get('base:script:{}'.format(scriptname))
 
     if sha is None:
         sys.stderr.write('Unknown script {}\n'.format(scriptname))

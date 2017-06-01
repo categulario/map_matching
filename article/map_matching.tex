@@ -44,7 +44,11 @@ From the article.
 \begin{enumerate}
 	\item the Python programming language.
 
-	\item Redis database.
+	\item Redis database. Two main groups of data stored:
+	\begin{itemize}
+		\item \textbf{base}. Data that does not change between computations, like the street graph or lua scripts.
+		\item \textbf{track}. Data related to the current track being analized.
+	\end{itemize}
 \end{enumerate}
 
 \end{section}
