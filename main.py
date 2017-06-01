@@ -80,9 +80,13 @@ def compute():
             streets.add(curstreet.name)
         curstreet = curstreet.parent
 
-    json.dump(feature_collection(
+    json.dump(feature_collection([
         line_string(list(map(lambda x: float(x), nodepos)) for nodepos in runscript('nodes_from_way', street)) for street in streets
-    ), open('./build/result.geojson', 'w'))
+    ] + [line_string(coordinates, {
+        'stroke': '#000000',
+        'stroke-width': 4,
+        'stroke-opacity': .5,
+    })]), open('./build/result.geojson', 'w'))
 
 @task
 def loadscripts():
