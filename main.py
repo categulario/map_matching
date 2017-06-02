@@ -55,30 +55,37 @@ def compute():
     hashes = Hashids(salt='a salt', min_length=6, alphabet='0123456789ABCDEF')
 
     # Using dijskra to find the best route match
-    heap = [Edge(0, 0, 'start')]
+    heap = [Edge()]
     path = None
 
     while len(heap) > 0:
-        street = heappop(heap)
+        edge = heappop(heap)
 
         # add to the heap the nodes reachable from current node
-        for way, dist in runscript('ways_from_gps', coordinates[street.layer][0], coordinates[street.layer][1], 150, street.layer):
-            cost = float(dist)
-            newnode = Edge(cost, street.layer+1, way.decode('utf8'), street)
+        for way, dist in runscript('ways_from_gps', coordinates[edge.layer][0], coordinates[edge.layer][1], 150, edge.layer):
+            weigth = float(dist) + edge.weigth
+            newedge = Edge(
+                weigth      = weigth,
+                layer       = edge.layer+1,
+                from_street = edge.to_street,
+                to_street   = way.decode('utf8'),
+                parent      = edge
+            )
 
-            heappush(heap, newnode)
+            heappush(heap, newedge)
 
         # last GPS position visited, route finished
-        if street.layer == len(coordinates)-1:
+        if edge.layer == len(coordinates)-1:
             break
 
-    curstreet = street
+    curedge = edge
     streets = set()
 
-    while curstreet != None:
-        if curstreet.name != 'start':
-            streets.add(curstreet.name)
-        curstreet = curstreet.parent
+    while curedge != None:
+        if curedge.from_street: streets.add(curedge.from_street)
+        if curedge.to_street: streets.add(curedge.to_street)
+
+        curedge = curedge.parent
 
     json.dump(feature_collection([
         line_string(list(map(lambda x: float(x), nodepos)) for nodepos in runscript('nodes_from_way', street)) for street in streets
