@@ -61,20 +61,22 @@ def compute():
 
     while len(heap) > 0:
         edge = heappop(heap)
+        print(edge)
 
         # add to the heap the nodes reachable from current node
-        for way, dist, nearestnode in lua('ways_from_gps', 150, edge.layer, *coordinates[edge.layer]):
+        for way, dist, nearestnode in lua('ways_from_gps', 150, edge.to_layer, *coordinates[edge.to_layer]):
             weigth = float(dist) + edge.weigth
 
             if edge.from_street:
                 # compare the great circle distance between gps positions with
                 # the shortest path length from street 1 to street 2
-                gpsdist = distance(*(coordinates[edge.layer] + coordinates[edge.layer+1]))
-                weigth += abs(gpsdist - lua('a_star', edge.nearestnode, nearestnode))
+                # gpsdist = distance(*(coordinates[edge.to_layer] + coordinates[edge.to_layer+1]))
+                # weigth += abs(gpsdist - lua('a_star', edge.to_nearestnode, nearestnode))
+                pass
 
             newedge = Edge(
                 weigth           = weigth,
-                layer            = edge.layer+1,
+                to_layer         = edge.to_layer+1,
                 from_street      = edge.to_street,
                 to_street        = way.decode('utf8'),
                 from_nearestnode = edge.to_nearestnode,
