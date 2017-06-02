@@ -10,6 +10,7 @@ from itertools import starmap
 from functools import partial
 from hashids import Hashids
 from heapq import heappush, heappop
+import argparse
 
 red = init_redis()
 
@@ -62,12 +63,12 @@ def compute():
         edge = heappop(heap)
 
         # add to the heap the nodes reachable from current node
-        for way, dist, nearestnode in runscript('ways_from_gps', 150, edge.layer, *coordinates[edge.layer]):
+        for way, dist, nearestnode in lua('ways_from_gps', 150, edge.layer, *coordinates[edge.layer]):
             weigth = float(dist) + edge.weigth
 
             if edge.from_street:
                 gpsdist = distance(*(coordinates[edge.layer-1] + coordinates[edge.layer]))
-                weigth += abs(gpsdist - runscript('a_star', edge.nearestnode, nearestnode))
+                weigth += abs(gpsdist - lua('a_star', edge.nearestnode, nearestnode))
 
             newedge = Edge(
                 weigth      = weigth,
@@ -94,7 +95,7 @@ def compute():
         curedge = curedge.parent
 
     json.dump(feature_collection([
-        line_string(list(map(lambda x: float(x), nodepos)) for nodepos in runscript('nodes_from_way', street)) for street in streets
+        line_string(list(map(lambda x: float(x), nodepos)) for nodepos in lua('nodes_from_way', street)) for street in streets
     ] + [line_string(coordinates, {
         'stroke': '#000000',
         'stroke-width': 4,
@@ -102,7 +103,7 @@ def compute():
     })]), open('./build/result.geojson', 'w'))
 
 @task
-def loadscripts():
+def loadlua():
     red.script_flush()
 
     with open('./lua/del_redis_keys.lua') as delscript:
@@ -128,14 +129,14 @@ def loadscripts():
     ))
 
 @task
-def listscripts():
+def lslua():
     return '\n'.join(map(
         lambda s: '{}: {}'.format(s[0].decode('utf8').split(':')[2], s[1].decode('utf8')),
-        runscript('list_scripts')
+        lua('list_scripts')
     ))
 
 @task
-def runscript(scriptname, *args):
+def lua(scriptname, *args):
     sha = red.get('base:script:{}'.format(scriptname))
 
     if sha is None:
@@ -145,19 +146,18 @@ def runscript(scriptname, *args):
     return red.evalsha(sha, 0, *args)
 
 if __name__ == '__main__':
-    if len(sys.argv) < 2:
-        sys.stderr.write('Missing task argument\n')
-        exit(1)
+    parser = argparse.ArgumentParser(description='Compute the map matching route')
 
-    task = sys.argv[1]
+    parser.add_argument('task', help='the task to execute', choices=tasks)
+    parser.add_argument('args', nargs='*', help='arguments for the task')
+    parser.add_argument('-s', '--silent', action='store_true')
 
-    if task not in tasks:
-        sys.stderr.write('Unknown task {}\n'.format(task))
-        exit(2)
+    args = parser.parse_args()
 
-    args = sys.argv[2:]
+    val = locals()[args.task](*args.args)
 
-    val = locals()[task](*args)
+    if args.silent:
+        exit()
 
     if type(val) is str:
         print(val)
