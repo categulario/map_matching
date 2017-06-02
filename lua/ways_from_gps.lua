@@ -1,9 +1,9 @@
 -- Gets all the ways a node belogs to
 local ways = {}
-local lon = ARGV[1]
-local lat = ARGV[2]
-local dist = ARGV[3]
-local layer = ARGV[4]
+local lon = ARGV[3]
+local lat = ARGV[4]
+local dist = ARGV[1]
+local layer = ARGV[2]
 
 -- add to set all ways near a gps position
 for i, node in pairs(redis.call('georadius', 'base:nodehash', lon, lat, dist, 'm', 'WITHDIST', 'ASC')) do
@@ -14,12 +14,9 @@ for i, node in pairs(redis.call('georadius', 'base:nodehash', lon, lat, dist, 'm
 		if redis.call('sadd', 'track:gps:'..layer..':ways', way) == 1 then
 			ways[#ways+1] = {
 				way,
-				nodedist
+				nodedist,
+				nodename
 			}
-
-			-- for j, node in pairs(redis.call('lrange', 'base:way:'..way..':nodes', 0, -1)) do
-				-- ways[i][2][j] = {node, redis.call('geopos', 'base:nodehash', node)[1]}
-			-- end
 		end
 	end
 end

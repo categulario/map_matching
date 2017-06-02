@@ -4,7 +4,7 @@ import sys
 import os
 from lib import task, tasks, init_redis
 from lib.graph import Edge
-from lib.geo import point, line_string, feature_collection
+from lib.geo import point, line_string, feature_collection, distance
 from pprint import pprint
 from itertools import starmap
 from functools import partial
@@ -62,14 +62,20 @@ def compute():
         edge = heappop(heap)
 
         # add to the heap the nodes reachable from current node
-        for way, dist in runscript('ways_from_gps', coordinates[edge.layer][0], coordinates[edge.layer][1], 150, edge.layer):
+        for way, dist, nearestnode in runscript('ways_from_gps', 150, edge.layer, *coordinates[edge.layer]):
             weigth = float(dist) + edge.weigth
+
+            if edge.from_street:
+                gpsdist = distance(*(coordinates[edge.layer-1] + coordinates[edge.layer]))
+                weigth += abs(gpsdist - runscript('a_star', edge.nearestnode, nearestnode))
+
             newedge = Edge(
                 weigth      = weigth,
                 layer       = edge.layer+1,
                 from_street = edge.to_street,
                 to_street   = way.decode('utf8'),
-                parent      = edge
+                nearestnode = nearestnode,
+                parent      = edge,
             )
 
             heappush(heap, newedge)
