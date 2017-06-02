@@ -67,16 +67,19 @@ def compute():
             weigth = float(dist) + edge.weigth
 
             if edge.from_street:
-                gpsdist = distance(*(coordinates[edge.layer-1] + coordinates[edge.layer]))
+                # compare the great circle distance between gps positions with
+                # the shortest path length from street 1 to street 2
+                gpsdist = distance(*(coordinates[edge.layer] + coordinates[edge.layer+1]))
                 weigth += abs(gpsdist - lua('a_star', edge.nearestnode, nearestnode))
 
             newedge = Edge(
-                weigth      = weigth,
-                layer       = edge.layer+1,
-                from_street = edge.to_street,
-                to_street   = way.decode('utf8'),
-                nearestnode = nearestnode,
-                parent      = edge,
+                weigth           = weigth,
+                layer            = edge.layer+1,
+                from_street      = edge.to_street,
+                to_street        = way.decode('utf8'),
+                from_nearestnode = edge.to_nearestnode,
+                to_nearestnode   = nearestnode,
+                parent           = edge,
             )
 
             heappush(heap, newedge)
