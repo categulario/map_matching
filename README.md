@@ -8,8 +8,8 @@ For reference read the resulting article
 
 Install:
 
-* python
-* redis
+* python3
+* redis >= 3.2.0
 
 Download the data using the overpass api, there is a simple curl command to do that in the `overpass/` folder:
 
@@ -17,8 +17,16 @@ Download the data using the overpass api, there is a simple curl command to do t
 $ ./overpass/get_street_graph.sh
 ```
 
+Install python dependencies. You may want to put them inside a virtualenv:
+
+```bash
+$ pip install -r requirements.py
+```
+
 Upload the street graph to redis:
 
 ```bash
 $ ./main.py loaddata
 ```
+
+Finally run one of the available tasks to do something.
