@@ -8,7 +8,6 @@ from lib.geo import point, line_string, feature_collection, distance
 from pprint import pprint
 from itertools import starmap
 from functools import partial
-from hashids import Hashids
 from heapq import heappush, heappop
 import argparse
 
@@ -50,6 +49,8 @@ def loaddata():
 
 @task
 def compute():
+    from hashids import Hashids
+
     data = json.load(open('./data/route.geojson'))
 
     coordinates = data['features'][0]['geometry']['coordinates']
@@ -87,7 +88,8 @@ def compute():
             heappush(heap, newedge)
 
         # last GPS position visited, route finished
-        if edge.layer == len(coordinates)-1:
+        # if edge.to_layer == len(coordinates)-1:
+        if edge.to_layer == 3:
             break
 
     curedge = edge
