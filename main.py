@@ -45,6 +45,8 @@ def loaddata():
 
         print('loaded {}/{}'.format(i+1, total), end='\r', flush=True)
 
+    print()
+
     return 'done'
 
 @task

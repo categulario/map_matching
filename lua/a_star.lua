@@ -67,21 +67,3 @@ local function heappop(heap)
 	
 	return lastel
 end
-
-local heap = {}
-
-heappush(heap, 5)
-heappush(heap, 2)
-heappush(heap, 7)
-heappush(heap, 1)
-heappush(heap, 6)
-heappush(heap, 3)
-
-heappop(heap)
-heappop(heap)
-heappop(heap)
-heappop(heap)
-heappop(heap) -- one item left
-heappop(heap)
-
-return heap
