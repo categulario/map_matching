@@ -9,7 +9,7 @@ local function shiftdown(heap, startpos, pos)
 		local parentpos = math.floor(pos/2)
 		local parent = heap[parentpos]
 
-		if newitem < parent then
+		if newitem[1] < parent[1] then
 			heap[pos] = parent
 			pos = parentpos
 		else
@@ -29,7 +29,7 @@ local function shiftup(heap, pos)
 	while childpos < endpos do
 		local rightpos = childpos + 1
 
-		if rightpos < endpos and not (heap[childpos] < heap[rightpos]) then
+		if rightpos < endpos and not (heap[childpos][1] < heap[rightpos][1]) then
 			childpos = rightpos
 		end
 
@@ -67,3 +67,72 @@ local function heappop(heap)
 	
 	return lastel
 end
+
+local function neighbours(nodeid)
+	local result = {}
+
+	for i, way in pairs(redis.call('lrange', 'base:node:'..nodeid..':ways', 0, -1)) do
+		local nodes = redis.call('lrange', 'base:way:'..way..':nodes', 0, -1)
+
+		for j, node in pairs(nodes) do
+			if node == nodeid then
+				if j+1 <= #nodes then
+					result[#result+1] = {
+						redis.call('geodist', 'base:nodehash', node, nodes[j+1], 'm'),
+						nodes[j+1]
+					}
+				end
+				if j-1 >= 1 then
+					result[#result+1] = {
+						redis.call('geodist', 'base:nodehash', node, nodes[j-1], 'm'),
+						nodes[j-1]
+					}
+				end
+			end
+		end
+	end
+
+	return result
+end
+
+local function concat(t1, t2)
+	local res = {}
+
+	for i = 1,#t1 do
+		res[i] = t1[i]
+	end
+
+	for i = 1,#t2 do
+		res[#res+1] = t2[i]
+	end
+
+	return res
+end
+
+--------
+-- A* --
+--------
+
+local heap = {
+	{0, {source_node}}
+}
+
+while #heap > 0 do
+
+	local cost, nodelist = unpack(heappop(heap))
+	local lastnode = nodelist[#nodelist]
+
+	if lastnode == dest_node then
+		return nodelist
+	end
+
+	if redis.call('sismember', 'astar:visited', lastnode) == 0 then
+		redis.call('sadd', 'astar:visited', lastnode)
+
+		for i, neighbour in pairs(neighbours(lastnode)) do
+			heappush(heap, {cost + neighbour[1], concat(nodelist, {neighbour[2]})})
+		end
+	end
+end
+
+return heap
