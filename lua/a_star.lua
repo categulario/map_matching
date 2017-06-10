@@ -123,6 +123,8 @@ while #heap > 0 do
 	local lastnode = nodelist[#nodelist]
 
 	if lastnode == dest_node then
+		redis.call('del', 'astar:visited')
+
 		return nodelist
 	end
 
@@ -134,5 +136,3 @@ while #heap > 0 do
 		end
 	end
 end
-
-return heap
