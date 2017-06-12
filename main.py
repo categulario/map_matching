@@ -51,12 +51,9 @@ def loaddata():
 
 @task
 def compute():
-    from hashids import Hashids
-
     data = json.load(open('./data/route.geojson'))
 
     coordinates = data['features'][0]['geometry']['coordinates']
-    hashes = Hashids(salt='a salt', min_length=6, alphabet='0123456789ABCDEF')
 
     # Using dijskra to find the best route match
     heap = [Edge()]
