@@ -112,6 +112,21 @@ def compute():
     })]), open('./build/result.geojson', 'w'))
 
 @task
+def a_star(fromnode, tonode):
+    loadlua()
+
+    route = lua('a_star', fromnode, tonode)
+
+    if route == 0:
+        return 'Route not found'
+
+    json.dump(feature_collection([
+            line_string(list(map(float, coords)) for coords in lua('a_star', fromnode, tonode))
+    ]), open('./build/a_star.geojson', 'w'))
+
+    return route
+
+@task
 def loadlua():
     red.script_flush()
 

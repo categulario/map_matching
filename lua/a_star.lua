@@ -2,6 +2,8 @@
 local source_node = ARGV[1]
 local dest_node = ARGV[2]
 
+redis.call('del', 'astar:visited')
+
 local function shiftdown(heap, startpos, pos)
 	local newitem = heap[pos]
 
@@ -72,17 +74,22 @@ local function neighbours(nodeid)
 	local result = {}
 
 	for i, way in pairs(redis.call('lrange', 'base:node:'..nodeid..':ways', 0, -1)) do
-		local nodes = redis.call('lrange', 'base:way:'..way..':nodes', 0, -1)
+		local nodes   = redis.call('lrange', 'base:way:'..way..':nodes', 0, -1)
+		local highway = redis.call('get', 'base:way:'..way..':highway')
+		local oneway  = redis.call('get', 'base:way:'..way..':oneway')
+		local normal  = oneway ~= '-1' and oneway ~= 'reverse'
+		local oposite = oneway ~= 'yes' and oneway ~= 'true' and oneway ~= '1' and highway ~= 'motorway'
 
 		for j, node in pairs(nodes) do
 			if node == nodeid then
-				if j+1 <= #nodes then
+				if j+1 <= #nodes and normal then
 					result[#result+1] = {
 						redis.call('geodist', 'base:nodehash', node, nodes[j+1], 'm'),
 						nodes[j+1]
 					}
 				end
-				if j-1 >= 1 then
+
+				if j-1 >= 1 and oposite then
 					result[#result+1] = {
 						redis.call('geodist', 'base:nodehash', node, nodes[j-1], 'm'),
 						nodes[j-1]
@@ -123,9 +130,7 @@ while #heap > 0 do
 	local lastnode = nodelist[#nodelist]
 
 	if lastnode == dest_node then
-		redis.call('del', 'astar:visited')
-
-		return nodelist
+		return redis.call('geopos', 'base:nodehash', unpack(nodelist))
 	end
 
 	if redis.call('sismember', 'astar:visited', lastnode) == 0 then
@@ -136,3 +141,5 @@ while #heap > 0 do
 		end
 	end
 end
+
+return 0
