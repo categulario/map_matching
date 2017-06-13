@@ -6,10 +6,11 @@ def frombytes(val):
 @total_ordering
 class Edge:
 
-    def __init__(self, weigth=0, to_layer=0, to_nearestnode='', path=None, parent=None):
+    def __init__(self, weigth=0, to_layer=0, to_nearestnode='', to_coordinates=None, path=None, parent=None):
         self.weigth         = weigth
         self.to_layer       = to_layer
         self.to_nearestnode = frombytes(to_nearestnode)
+        self.to_coordinates = to_coordinates,
         self.path           = path
         self.parent         = parent
 

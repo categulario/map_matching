@@ -61,15 +61,20 @@ def mapmatch():
         for way2, dist2, nearestnode2 in lua('ways_from_gps', 150, 1, *coordinates[1]):
             weigth, path = lua('a_star', nearestnode1, nearestnode2)
 
+            weigth = abs(weigth - distance(*(coordinates[0]+coordinates[1])))
+
             newedge = Edge(
                 weigth         = weigth,
                 to_layer       = 1,
                 to_nearestnode = nearestnode2,
+                to_coordinates = coordinates[1],
                 path           = path,
                 parent         = None,
             )
 
             heappush(heap, newedge)
+
+    force_break = False
 
     while len(heap) > 0:
         edge = heappop(heap)
@@ -82,29 +87,38 @@ def mapmatch():
 
         # add edges to next layer from this edge's last node
         for way, dist, nearestnode in lua('ways_from_gps', 150, next_layer, *coordinates[next_layer]):
-            weigth, path = lua('a_star', edge.to_nearestnode, nearestnode)
+            try:
+                weigth, path = lua('a_star', edge.to_nearestnode, nearestnode)
+            except TypeError as e:
+                print('no route from {} to {}'.format(edge.to_nearestnode, nearestnode))
+                force_break = True
+                break
+
+            weigth = abs(weigth - distance(*(coordinates[edge.to_layer]+coordinates[next_layer])))
 
             newedge = Edge(
                 weigth         = edge.weigth + weigth,
                 to_layer       = next_layer,
                 to_nearestnode = nearestnode,
+                to_coordinates = coordinates[next_layer],
                 path           = path,
                 parent         = edge,
             )
 
             heappush(heap, newedge)
 
+        if force_break:
+            break
+
     curedge = edge
-    path = []
+    lines = []
 
     while curedge != None:
-        path = curedge.path + path
+        lines.append(line_string(list(map(float, pos)) for pos in curedge.path))
 
         curedge = curedge.parent
 
-    json.dump(feature_collection([
-        line_string(list(map(float, pos)) for pos in path)
-    ] + [line_string(coordinates, {
+    json.dump(feature_collection(lines + [line_string(coordinates, {
         'stroke': '#000000',
         'stroke-width': 4,
         'stroke-opacity': .5,
