@@ -130,7 +130,7 @@ while #heap > 0 do
 	local lastnode = nodelist[#nodelist]
 
 	if lastnode == dest_node then
-		return redis.call('geopos', 'base:nodehash', unpack(nodelist))
+		return {cost, redis.call('geopos', 'base:nodehash', unpack(nodelist))}
 	end
 
 	if redis.call('sismember', 'astar:visited', lastnode) == 0 then

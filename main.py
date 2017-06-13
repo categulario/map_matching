@@ -50,58 +50,60 @@ def loaddata():
     return 'done'
 
 @task
-def compute():
+def mapmatch():
     data = json.load(open('./data/route.geojson'))
 
     coordinates = data['features'][0]['geometry']['coordinates']
+    heap = []
 
-    # Using dijskra to find the best route match
-    heap = [Edge()]
-    path = None
+    # First set of edges from layer 0 to layer 1
+    for way1, dist1, nearestnode1 in lua('ways_from_gps', 150, 0, *coordinates[0]):
+        for way2, dist2, nearestnode2 in lua('ways_from_gps', 150, 1, *coordinates[1]):
+            weigth, path = lua('a_star', nearestnode1, nearestnode2)
+
+            newedge = Edge(
+                weigth         = weigth,
+                to_layer       = 1,
+                to_nearestnode = nearestnode2,
+                path           = path,
+                parent         = None,
+            )
+
+            heappush(heap, newedge)
 
     while len(heap) > 0:
         edge = heappop(heap)
         print(edge)
 
-        # add to the heap the nodes reachable from current node
-        for way, dist, nearestnode in lua('ways_from_gps', 150, edge.to_layer, *coordinates[edge.to_layer]):
-            weigth = float(dist) + edge.weigth
+        if edge.to_layer == len(coordinates)-1 :
+            break
 
-            if edge.from_street:
-                # compare the great circle distance between gps positions with
-                # the shortest path length from street 1 to street 2
-                # gpsdist = distance(*(coordinates[edge.to_layer] + coordinates[edge.to_layer+1]))
-                # weigth += abs(gpsdist - lua('a_star', edge.to_nearestnode, nearestnode))
-                pass
+        next_layer = edge.to_layer+1
+
+        # add edges to next layer from this edge's last node
+        for way, dist, nearestnode in lua('ways_from_gps', 150, next_layer, *coordinates[next_layer]):
+            weigth, path = lua('a_star', edge.to_nearestnode, nearestnode)
 
             newedge = Edge(
-                weigth           = weigth,
-                to_layer         = edge.to_layer+1,
-                from_street      = edge.to_street,
-                to_street        = way.decode('utf8'),
-                from_nearestnode = edge.to_nearestnode,
-                to_nearestnode   = nearestnode,
-                parent           = edge,
+                weigth         = edge.weigth + weigth,
+                to_layer       = next_layer,
+                to_nearestnode = nearestnode,
+                path           = path,
+                parent         = edge,
             )
 
             heappush(heap, newedge)
 
-        # last GPS position visited, route finished
-        # if edge.to_layer == len(coordinates)-1:
-        if edge.to_layer == 3:
-            break
-
     curedge = edge
-    streets = set()
+    path = []
 
     while curedge != None:
-        if curedge.from_street: streets.add(curedge.from_street)
-        if curedge.to_street: streets.add(curedge.to_street)
+        path = curedge.path + path
 
         curedge = curedge.parent
 
     json.dump(feature_collection([
-        line_string(list(map(lambda x: float(x), nodepos)) for nodepos in lua('nodes_from_way', street)) for street in streets
+        line_string(list(map(float, pos)) for pos in path)
     ] + [line_string(coordinates, {
         'stroke': '#000000',
         'stroke-width': 4,

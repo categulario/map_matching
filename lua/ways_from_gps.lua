@@ -5,6 +5,8 @@ local lat = ARGV[4]
 local dist = ARGV[1]
 local layer = ARGV[2]
 
+redis.call('del', 'track:gps:'..layer..':ways')
+
 -- add to set all ways near a gps position
 for i, node in pairs(redis.call('georadius', 'base:nodehash', lon, lat, dist, 'm', 'WITHDIST', 'ASC')) do
 	local nodename = node[1]
