@@ -67,7 +67,7 @@ def mapmatch():
 
     parents = dict()
 
-    for layer in range(1, 10):
+    for layer in range(1, 12):
         print('processing layer {}'.format(layer))
         total_links = len(closest_ways[layer-1])*len(closest_ways[layer])
         count = 0
@@ -82,7 +82,10 @@ def mapmatch():
             best_parent = None
 
             for wayf, distf, nearestnodef in closest_ways[layer-1]: # f for from
-                length, path = lua('a_star', nearestnodef, nearestnodet)
+                try:
+                    length, path = lua('a_star', nearestnodef, nearestnodet)
+                except TypeError as e:
+                    print('error between {} and {} at layer {}'.format(nearestnodef, nearestnodet, layer))
 
                 # difference between path length and great circle distance between the two gps points
                 curcost = log(abs(length - distance(*(coordinates[layer-1]+coordinates[layer]))))
@@ -143,7 +146,7 @@ def a_star(fromnode, tonode):
         return 'Route not found'
 
     json.dump(feature_collection([
-            line_string(list(map(float, coords)) for coords in lua('a_star', fromnode, tonode))
+            line_string(list(map(float, coords)) for coords in route[1])
     ]), open('./build/a_star.geojson', 'w'))
 
     return route
