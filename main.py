@@ -3,13 +3,14 @@ import json
 import sys
 import os
 from lib import task, tasks, init_redis
-from lib.graph import Edge
+from lib.graph import Node, INF
 from lib.geo import point, line_string, feature_collection, distance
 from pprint import pprint
 from itertools import starmap
 from functools import partial
 from heapq import heappush, heappop
 import argparse
+from math import exp, log
 
 red = init_redis()
 
@@ -54,69 +55,72 @@ def mapmatch():
     data = json.load(open('./data/route.geojson'))
 
     coordinates = data['features'][0]['geometry']['coordinates']
-    heap = []
 
-    # First set of edges from layer 0 to layer 1
-    for way1, dist1, nearestnode1 in lua('ways_from_gps', 150, 0, *coordinates[0]):
-        for way2, dist2, nearestnode2 in lua('ways_from_gps', 150, 1, *coordinates[1]):
-            weigth, path = lua('a_star', nearestnode1, nearestnode2)
+    closest_ways = [
+        lua('ways_from_gps', 150, layer, *coords) for layer, coords in enumerate(coordinates)
+    ]
 
-            weigth = abs(weigth - distance(*(coordinates[0]+coordinates[1])))
+    parents = dict()
 
-            newedge = Edge(
-                weigth         = weigth,
-                to_layer       = 1,
-                to_nearestnode = nearestnode2,
-                to_coordinates = coordinates[1],
-                path           = path,
-                parent         = None,
+    for layer in range(1, 4):
+        print('processing layer {}'.format(layer))
+        total_links = len(closest_ways[layer-1])*len(closest_ways[layer])
+        count = 0
+
+        best_of_layer = None
+        best_of_layer_cost = INF
+
+        for wayt, distt, nearestnodet in closest_ways[layer]: # t for to
+            best_way    = None
+            best_cost   = INF
+            best_path   = None
+            best_parent = None
+
+            for wayf, distf, nearestnodef in closest_ways[layer-1]: # f for from
+                length, path = lua('a_star', nearestnodef, nearestnodet)
+
+                # difference between path length and great circle distance between the two gps points
+                curcost = log(abs(length - distance(*(coordinates[layer-1]+coordinates[layer]))))
+                # distance between start of path and first gps point
+                curcost += log(distance(*(coordinates[layer-1] + list(map(float, red.geopos('base:nodehash', nearestnodef)[0])))))
+                # distance between end of path and second gps point
+                curcost += log(distance(*(coordinates[layer] + list(map(float, red.geopos('base:nodehash', nearestnodet)[0])))))
+
+                cur_parent = parents.get(Node.hash(layer-1, wayf))
+                if cur_parent: curcost += cur_parent.cost
+
+                if curcost < best_cost:
+                    best_cost   = curcost
+                    best_way    = wayt
+                    best_path   = path
+                    best_parent = cur_parent
+
+                count += 1
+                print('processed {} of {} links for this layer'.format(count, total_links), end='\r', flush=True)
+
+            newnode = Node(
+                layer  = layer,
+                way    = wayt,
+                cost   = best_cost,
+                path   = best_path,
+                parent = best_parent,
             )
 
-            heappush(heap, newedge)
+            parents[Node.hash(layer, wayt)] = newnode
 
-    force_break = False
+            if newnode.cost < best_of_layer_cost:
+                best_of_layer = newnode
+                best_of_layer_cost = newnode.cost
 
-    while len(heap) > 0:
-        edge = heappop(heap)
-        print(edge)
+        print()
 
-        if edge.to_layer == len(coordinates)-1 :
-            break
-
-        next_layer = edge.to_layer+1
-
-        # add edges to next layer from this edge's last node
-        for way, dist, nearestnode in lua('ways_from_gps', 150, next_layer, *coordinates[next_layer]):
-            try:
-                weigth, path = lua('a_star', edge.to_nearestnode, nearestnode)
-            except TypeError as e:
-                print('no route from {} to {}'.format(edge.to_nearestnode, nearestnode))
-                force_break = True
-                break
-
-            weigth = abs(weigth - distance(*(coordinates[edge.to_layer]+coordinates[next_layer])))
-
-            newedge = Edge(
-                weigth         = edge.weigth + weigth,
-                to_layer       = next_layer,
-                to_nearestnode = nearestnode,
-                to_coordinates = coordinates[next_layer],
-                path           = path,
-                parent         = edge,
-            )
-
-            heappush(heap, newedge)
-
-        if force_break:
-            break
-
-    curedge = edge
+    curnode = best_of_layer
     lines = []
 
-    while curedge != None:
-        lines.append(line_string(list(map(float, pos)) for pos in curedge.path))
+    while curnode != None:
+        lines.append(line_string(list(map(float, pos)) for pos in curnode.path))
 
-        curedge = curedge.parent
+        curnode = curnode.parent
 
     json.dump(feature_collection(lines + [line_string(coordinates, {
         'stroke': '#000000',

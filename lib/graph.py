@@ -1,27 +1,25 @@
 from functools import total_ordering
 
+INF = float('inf')
+
 def frombytes(val):
     return val.decode('utf8') if type(val) == bytes else val
 
-@total_ordering
-class Edge:
+class Node:
 
-    def __init__(self, weigth=0, to_layer=0, to_nearestnode='', to_coordinates=None, path=None, parent=None):
-        self.weigth         = weigth
-        self.to_layer       = to_layer
-        self.to_nearestnode = frombytes(to_nearestnode)
-        self.to_coordinates = to_coordinates,
-        self.path           = path
-        self.parent         = parent
-
-    def __eq__(self, other):
-        pass
-
-    def __lt__(self, other):
-        pass
+    def __init__(self, layer=None, way=None, cost=INF, path=None, parent=None):
+        self.cost   = cost
+        self.path   = path
+        self.parent = parent
+        self.layer  = layer
+        self.way    = way
 
     def __hash__(self):
-        return hash(self.from_street + '-' + self.to_street)
+        return Node.hash(self.layer, self.way)
 
     def __str__(self):
-        return '<Edge:{} {} {}>'.format(self.to_layer, self.weigth, self.to_nearestnode)
+        return '<Node:{} {}>'.format(self.layer, self.cost, self.to_nearestnode)
+
+    @staticmethod
+    def hash(layer, way):
+        return hash('{}-{}'.format(layer, way))
