@@ -62,7 +62,7 @@ def mapmatch():
 
     parents = dict()
 
-    for layer in range(1, 4):
+    for layer in range(1, 10):
         print('processing layer {}'.format(layer))
         total_links = len(closest_ways[layer-1])*len(closest_ways[layer])
         count = 0
@@ -82,9 +82,9 @@ def mapmatch():
                 # difference between path length and great circle distance between the two gps points
                 curcost = log(abs(length - distance(*(coordinates[layer-1]+coordinates[layer]))))
                 # distance between start of path and first gps point
-                curcost += log(distance(*(coordinates[layer-1] + list(map(float, red.geopos('base:nodehash', nearestnodef)[0])))))
+                curcost += distance(*(coordinates[layer-1] + list(map(float, red.geopos('base:nodehash', nearestnodef)[0]))))
                 # distance between end of path and second gps point
-                curcost += log(distance(*(coordinates[layer] + list(map(float, red.geopos('base:nodehash', nearestnodet)[0])))))
+                curcost += distance(*(coordinates[layer] + list(map(float, red.geopos('base:nodehash', nearestnodet)[0]))))
 
                 cur_parent = parents.get(Node.hash(layer-1, wayf))
                 if cur_parent: curcost += cur_parent.cost
