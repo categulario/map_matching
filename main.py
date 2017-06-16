@@ -32,7 +32,8 @@ def loaddata():
             red.pfadd('base:node:count', eid)
 
         elif etype == 'way':
-            if element['tags']['highway'] in ['service', 'footway', 'steps']:
+# from http://wiki.openstreetmap.org/wiki/Map_Features#Special_road_types
+            if element['tags']['highway'] in ['service', 'footway', 'steps', 'pedestrian', 'escape', 'raceway', 'bridleway', 'cycleway']:
                 ignored += 1
                 continue
 
