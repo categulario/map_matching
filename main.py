@@ -137,10 +137,10 @@ def mapmatch():
     })]), open('./build/result.geojson', 'w'))
 
 @task
-def a_star(fromnode, tonode):
+def a_star(fromnode, tonode, skipnode=None):
     loadlua()
 
-    route = lua('a_star', fromnode, tonode)
+    route = lua('a_star', fromnode, tonode, skipnode)
 
     if route == 0:
         return 'Route not found'

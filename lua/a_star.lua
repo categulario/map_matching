@@ -1,6 +1,7 @@
 -- The A* algorithm
 local source_node = ARGV[1]
 local dest_node = ARGV[2]
+local skip_node = ARGV[3]
 
 redis.call('del', 'astar:visited')
 
@@ -82,14 +83,14 @@ local function neighbours(nodeid)
 
 		for j, node in pairs(nodes) do
 			if node == nodeid then
-				if j+1 <= #nodes and normal then
+				if j+1 <= #nodes and normal and nodes[j+1] ~= skip_node then
 					result[#result+1] = {
 						redis.call('geodist', 'base:nodehash', node, nodes[j+1], 'm'),
 						nodes[j+1]
 					}
 				end
 
-				if j-1 >= 1 and oposite then
+				if j-1 >= 1 and oposite and nodes[j-1] ~= skip_node then
 					result[#result+1] = {
 						redis.call('geodist', 'base:nodehash', node, nodes[j-1], 'm'),
 						nodes[j-1]
