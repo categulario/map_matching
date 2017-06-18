@@ -3,6 +3,10 @@ local source_node = ARGV[1]
 local dest_node = ARGV[2]
 local skip_node = ARGV[3]
 
+-- If a path excedes K times the great circle distance between the start
+-- node and the destination node then discard the route
+local K = 5
+
 redis.call('del', 'astar:visited')
 
 local function shiftdown(heap, startpos, pos)
@@ -125,6 +129,9 @@ local heap = {
 	{0, {source_node}}
 }
 
+-- great circle distance between source and dest nodes
+local gcdist = redis.call('geodist', 'base:nodehash', source_node, dest_node, 'm')
+
 while #heap > 0 do
 
 	local cost, nodelist = unpack(heappop(heap))
@@ -144,7 +151,11 @@ while #heap > 0 do
 		redis.call('sadd', 'astar:visited', lastnode)
 
 		for i, neighbour in pairs(neighbours(lastnode)) do
-			heappush(heap, {cost + neighbour[1], concat(nodelist, {neighbour[2]})})
+			local newcost = cost + neighbour[1]
+
+			if newcost < K*gcdist then
+				heappush(heap, {newcost, concat(nodelist, {neighbour[2]})})
+			end
 		end
 	end
 end
