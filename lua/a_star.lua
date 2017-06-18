@@ -5,7 +5,6 @@ local skip_node = ARGV[3]
 
 -- If a path excedes K times the great circle distance between the start
 -- node and the destination node then discard the route
-local K = 5
 
 redis.call('del', 'astar:visited')
 
