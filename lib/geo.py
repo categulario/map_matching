@@ -43,7 +43,7 @@ def line_string(coordinates, properties=None):
         'stroke-opacity': 1,
     }
 
-    properties = properties if properties else dict()
+    properties = properties or dict()
 
     return {
         'type': 'Feature',
@@ -51,5 +51,22 @@ def line_string(coordinates, properties=None):
         'geometry': {
             'type': 'LineString',
             'coordinates': list(coordinates),
+        },
+    }
+
+def polygon(coordinates, properties=None):
+    properties = properties or dict()
+
+    defaults = {
+        'fill': random_color(),
+        'fill-opacity': 0.5
+    }
+
+    return {
+        'type': 'Feature',
+        'properties': {**defaults, **properties},
+        'geometry': {
+            'type': 'Polygon',
+            'coordinates': [list(coordinates)],
         },
     }

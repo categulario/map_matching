@@ -4,7 +4,7 @@ import sys
 import os
 from lib import task, tasks, init_redis
 from lib.graph import Node, INF
-from lib.geo import point, line_string, feature_collection, distance
+from lib.geo import *
 from pprint import pprint
 from itertools import starmap
 from functools import partial
@@ -57,6 +57,35 @@ def loaddata():
     return 'done'
 
 @task
+def triangles():
+    data = json.load(open('./data/route.geojson'))
+
+    coords = data['features'][0]['geometry']['coordinates']
+
+    features = []
+
+    newlinecoords = []
+
+    for n1, n2, n3 in zip(coords[0:-2], coords[1: -1], coords[2:]):
+        # features.append(polygon([n1, n2, n3, n1]))
+        mid = [
+            (n1[0]+n2[0])/2,
+            (n1[1]+n2[1])/2,
+        ]
+
+        prop = 2/3
+
+        newlinecoords.append([
+            n3[0] + (mid[0] - n3[0])*prop,
+            n3[1] + (mid[1] - n3[1])*prop,
+        ])
+
+    features.append(line_string([coords[0]] + newlinecoords + [coords[-1]]))
+    features.append(line_string(coords))
+
+    json.dump(feature_collection(features), open('./build/triangles.geojson', 'w'))
+
+@task
 def mapmatch():
     data = json.load(open('./data/route.geojson'))
 
@@ -83,10 +112,12 @@ def mapmatch():
             best_parent = None
 
             for wayf, distf, nearestnodef in closest_ways[layer-1]: # f for from
+                cur_parent = parents.get(Node.hash(layer-1, wayf))
+
                 try:
-                    length, path = lua('a_star', nearestnodef, nearestnodet)
+                    length, path = lua('a_star', nearestnodef, nearestnodet, cur_parent.skip_node if cur_parent is not None else None)
                 except TypeError as e:
-                    print('error between {} and {} at layer {}'.format(nearestnodef, nearestnodet, layer))
+                    print('error between {} and {} at layer {} with skip node {}'.format(nearestnodef, nearestnodet, layer, cur_parent.skip_node if cur_parent is not None else None))
 
                 # difference between path length and great circle distance between the two gps points
                 curcost = log(abs(length - distance(*(coordinates[layer-1]+coordinates[layer]))))
@@ -95,7 +126,6 @@ def mapmatch():
                 # distance between end of path and second gps point
                 curcost += distance(*(coordinates[layer] + list(map(float, red.geopos('base:nodehash', nearestnodet)[0]))))
 
-                cur_parent = parents.get(Node.hash(layer-1, wayf))
                 if cur_parent: curcost += cur_parent.cost
 
                 if curcost < best_cost:
@@ -107,12 +137,21 @@ def mapmatch():
                 count += 1
                 print('processed {} of {} links for this layer'.format(count, total_links), end='\r', flush=True)
 
+            if len(best_path) >= 2:
+                skip_node = best_path[-2][2]
+            elif len(best_path) == 1:
+                print('way of length 1 found')
+                skip_node = best_parent.path[-1] if best_parent else None
+            else:
+                print('way of length 0 found!')
+
             newnode = Node(
-                layer  = layer,
-                way    = wayt,
-                cost   = best_cost,
-                path   = best_path,
-                parent = best_parent,
+                layer     = layer,
+                way       = wayt,
+                cost      = best_cost,
+                path      = best_path,
+                parent    = best_parent,
+                skip_node = skip_node,
             )
 
             parents[Node.hash(layer, wayt)] = newnode
@@ -138,10 +177,10 @@ def mapmatch():
     })]), open('./build/result.geojson', 'w'))
 
 @task
-def a_star(fromnode, tonode, skipnode=None):
+def a_star(fromnode, tonode, skip_node=None):
     loadlua()
 
-    route = lua('a_star', fromnode, tonode, skipnode)
+    route = lua('a_star', fromnode, tonode, skip_node)
 
     if route == 0:
         return 'Route not found'

@@ -7,12 +7,13 @@ def frombytes(val):
 
 class Node:
 
-    def __init__(self, layer=None, way=None, cost=INF, path=None, parent=None):
-        self.cost   = cost
-        self.path   = path
-        self.parent = parent
-        self.layer  = layer
-        self.way    = way
+    def __init__(self, layer=None, way=None, cost=INF, path=None, parent=None, skip_node=None):
+        self.cost      = cost
+        self.path      = path
+        self.parent    = parent
+        self.layer     = layer
+        self.way       = way
+        self.skip_node = skip_node
 
     def __hash__(self):
         return Node.hash(self.layer, self.way)
