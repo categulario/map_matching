@@ -151,11 +151,12 @@ while #heap > 0 do
 		redis.call('sadd', 'astar:visited', lastnode)
 
 		for i, neighbour in pairs(neighbours(lastnode)) do
-			local newcost = cost + neighbour[1]
+			local heuristic = redis.call('geodist', 'base:nodehash', neighbour[2], dest_node, 'm')
+			local newcost = cost + neighbour[1] + heuristic
 
-			if newcost < K*gcdist then
+			-- if newcost < K*gcdist then
 				heappush(heap, {newcost, concat(nodelist, {neighbour[2]})})
-			end
+			-- end
 		end
 	end
 end
