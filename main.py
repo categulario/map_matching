@@ -19,7 +19,6 @@ def loaddata():
     """loads the graph data obtained from OSM overpass api"""
     data = json.load(open('./overpass/street_graph.json'))
     total = len(data['elements'])
-    ignored = 0
 
     for i, element in enumerate(data['elements']):
         etype = element['type']
@@ -32,11 +31,6 @@ def loaddata():
             red.pfadd('base:node:count', eid)
 
         elif etype == 'way':
-# from http://wiki.openstreetmap.org/wiki/Map_Features#Special_road_types
-            if element['tags']['highway'] in ['service', 'footway', 'steps', 'pedestrian', 'escape', 'raceway', 'bridleway', 'cycleway']:
-                ignored += 1
-                continue
-
             # add nodes to way
             red.rpush('base:way:{}:nodes'.format(eid), *element['nodes'])
             # add to way count
@@ -51,8 +45,6 @@ def loaddata():
                 red.set('base:way:{}:{}'.format(eid, tag), value)
 
         print('loaded {}/{}'.format(i+1, total), end='\r', flush=True)
-
-    print('ignored {}'.format(ignored))
 
     return 'done'
 
