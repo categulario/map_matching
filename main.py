@@ -226,6 +226,17 @@ def lua(scriptname, *args):
 
     return red.evalsha(sha, 0, *args)
 
+@task
+def osrmresponse(responsefile):
+    def to_coordinate(tracepoint):
+        return tracepoint['location']
+
+    data = json.load(open(responsefile))
+
+    json.dump(feature_collection([
+        line_string(map(to_coordinate, data['tracepoints'])),
+    ]), sys.stdout)
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Compute the map matching route')
 
