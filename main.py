@@ -2,7 +2,7 @@
 import json
 import sys
 import os
-from lib import task, tasks, init_redis
+from lib import *
 from lib.graph import Node, INF
 from lib.geo import *
 from pprint import pprint
@@ -50,9 +50,7 @@ def loaddata():
 
 @task
 def triangles():
-    data = json.load(open('./data/route.geojson'))
-
-    coords = data['features'][0]['geometry']['coordinates']
+    coords = loadcoords()
 
     features = []
 
@@ -79,9 +77,7 @@ def triangles():
 
 @task
 def mapmatch():
-    data = json.load(open('./data/route.geojson'))
-
-    coordinates = data['features'][0]['geometry']['coordinates']
+    coordinates = loadcoords()
 
     closest_ways = [
         lua('ways_from_gps', 150, layer, *coords) for layer, coords in enumerate(coordinates)
