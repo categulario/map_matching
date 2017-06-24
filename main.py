@@ -85,7 +85,7 @@ def mapmatch():
 
     parents = dict()
 
-    for layer in range(1, 6):
+    for layer in range(1, 10):
         print('processing layer {}'.format(layer))
         total_links = len(closest_ways[layer-1])*len(closest_ways[layer])
         count = 0
@@ -94,10 +94,10 @@ def mapmatch():
         best_of_layer_cost = INF
 
         for wayt, distt, nearestnodet in closest_ways[layer]: # t for to
-            best_way    = None
             best_cost   = INF
-            best_path   = None
             best_parent = None
+            best_path   = None
+            best_way    = None
 
             for wayf, distf, nearestnodef in closest_ways[layer-1]: # f for from
                 cur_parent = parents.get(Node.hash(layer-1, wayf))
@@ -105,7 +105,7 @@ def mapmatch():
                 try:
                     length, path = lua('a_star', nearestnodef, nearestnodet, cur_parent.skip_node if cur_parent is not None else None)
                 except TypeError as e:
-                    continue
+                    continue # no route from start to end
 
                 # difference between path length and great circle distance between the two gps points
                 curcost = log(abs(length - distance(*(coordinates[layer-1]+coordinates[layer]))))
@@ -118,9 +118,9 @@ def mapmatch():
 
                 if curcost < best_cost:
                     best_cost   = curcost
-                    best_way    = wayt
-                    best_path   = path
                     best_parent = cur_parent
+                    best_path   = path
+                    best_way    = wayt
 
                 count += 1
                 print('processed {} of {} links for this layer'.format(count, total_links), end='\r', flush=True)
@@ -128,7 +128,7 @@ def mapmatch():
             if len(best_path) >= 2:
                 skip_node = best_path[-2][2]
             elif len(best_path) == 1:
-                skip_node = best_parent.path[-1] if best_parent else None
+                skip_node = best_parent.skip_node if best_parent else None
 
             newnode = Node(
                 layer     = layer,
