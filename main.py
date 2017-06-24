@@ -128,10 +128,7 @@ def mapmatch():
             if len(best_path) >= 2:
                 skip_node = best_path[-2][2]
             elif len(best_path) == 1:
-                print('way of length 1 found')
                 skip_node = best_parent.path[-1] if best_parent else None
-            else:
-                print('way of length 0 found!')
 
             newnode = Node(
                 layer     = layer,
@@ -154,13 +151,16 @@ def mapmatch():
     lines = []
 
     while curnode != None:
-        lines.append(line_string(
-            (list(map(float, pos)) for pos in curnode.path),
-            {
-                'layer': curnode.layer,
-                'way': curnode.way.decode('utf8'),
-            }
-        ))
+        if len(curnode.path) == 1:
+            lines.append(point(map(float, curnode.path[0])))
+        else:
+            lines.append(line_string(
+                (list(map(float, pos)) for pos in curnode.path),
+                {
+                    'layer': curnode.layer,
+                    'way': curnode.way.decode('utf8'),
+                }
+            ))
 
         curnode = curnode.parent
 
