@@ -85,7 +85,7 @@ def mapmatch():
 
     parents = dict()
 
-    for layer in range(1, 12):
+    for layer in range(1, 6):
         print('processing layer {}'.format(layer))
         total_links = len(closest_ways[layer-1])*len(closest_ways[layer])
         count = 0
@@ -105,7 +105,7 @@ def mapmatch():
                 try:
                     length, path = lua('a_star', nearestnodef, nearestnodet, cur_parent.skip_node if cur_parent is not None else None)
                 except TypeError as e:
-                    print('error between {} and {} at layer {} with skip node {}'.format(nearestnodef, nearestnodet, layer, cur_parent.skip_node if cur_parent is not None else None))
+                    continue
 
                 # difference between path length and great circle distance between the two gps points
                 curcost = log(abs(length - distance(*(coordinates[layer-1]+coordinates[layer]))))
@@ -154,7 +154,13 @@ def mapmatch():
     lines = []
 
     while curnode != None:
-        lines.append(line_string(list(map(float, pos)) for pos in curnode.path))
+        lines.append(line_string(
+            (list(map(float, pos)) for pos in curnode.path),
+            {
+                'layer': curnode.layer,
+                'way': curnode.way.decode('utf8'),
+            }
+        ))
 
         curnode = curnode.parent
 
