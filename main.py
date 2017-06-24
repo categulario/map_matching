@@ -2,7 +2,7 @@
 import json
 import sys
 import os
-from lib import task, tasks, init_redis
+from lib import *
 from lib.graph import Node, INF
 from lib.geo import *
 from pprint import pprint
@@ -19,7 +19,6 @@ def loaddata():
     """loads the graph data obtained from OSM overpass api"""
     data = json.load(open('./overpass/street_graph.json'))
     total = len(data['elements'])
-    ignored = 0
 
     for i, element in enumerate(data['elements']):
         etype = element['type']
@@ -32,11 +31,6 @@ def loaddata():
             red.pfadd('base:node:count', eid)
 
         elif etype == 'way':
-# from http://wiki.openstreetmap.org/wiki/Map_Features#Special_road_types
-            if element['tags']['highway'] in ['service', 'footway', 'steps', 'pedestrian', 'escape', 'raceway', 'bridleway', 'cycleway']:
-                ignored += 1
-                continue
-
             # add nodes to way
             red.rpush('base:way:{}:nodes'.format(eid), *element['nodes'])
             # add to way count
@@ -52,15 +46,11 @@ def loaddata():
 
         print('loaded {}/{}'.format(i+1, total), end='\r', flush=True)
 
-    print('ignored {}'.format(ignored))
-
     return 'done'
 
 @task
 def triangles():
-    data = json.load(open('./data/route.geojson'))
-
-    coords = data['features'][0]['geometry']['coordinates']
+    coords = loadcoords()
 
     features = []
 
@@ -87,9 +77,7 @@ def triangles():
 
 @task
 def mapmatch():
-    data = json.load(open('./data/route.geojson'))
-
-    coordinates = data['features'][0]['geometry']['coordinates']
+    coordinates = loadcoords()
 
     closest_ways = [
         lua('ways_from_gps', 150, layer, *coords) for layer, coords in enumerate(coordinates)
@@ -233,6 +221,17 @@ def lua(scriptname, *args):
         exit(3)
 
     return red.evalsha(sha, 0, *args)
+
+@task
+def osrmresponse(responsefile):
+    def to_coordinate(tracepoint):
+        return tracepoint['location']
+
+    data = json.load(open(responsefile))
+
+    json.dump(feature_collection([
+        line_string(map(to_coordinate, data['tracepoints'])),
+    ]), sys.stdout)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Compute the map matching route')

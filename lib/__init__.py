@@ -1,5 +1,6 @@
 from functools import wraps
 from random import choice
+import json
 
 def init_redis():
     import redis
@@ -23,3 +24,8 @@ def task(f):
 
 def random_color():
     return '#' + ''.join((choice('0123456789ABCDEF') for i in range(6)))
+
+def loadcoords():
+    data = json.load(open('./data/route.geojson'))
+
+    return data['features'][0]['geometry']['coordinates']
