@@ -76,7 +76,7 @@ def triangles():
     json.dump(feature_collection(features), open('./build/triangles.geojson', 'w'))
 
 @task
-def mapmatch():
+def mapmatch(layers):
     coordinates = loadcoords()
 
     closest_ways = [
@@ -85,7 +85,7 @@ def mapmatch():
 
     parents = dict()
 
-    for layer in range(1, 10):
+    for layer in range(1, int(layers)):
         print('processing layer {}'.format(layer))
         total_links = len(closest_ways[layer-1])*len(closest_ways[layer])
         count = 0
@@ -125,10 +125,13 @@ def mapmatch():
                 count += 1
                 print('processed {} of {} links for this layer'.format(count, total_links), end='\r', flush=True)
 
-            if len(best_path) >= 2:
-                skip_node = best_path[-2][2]
-            elif len(best_path) == 1:
-                skip_node = best_parent.skip_node if best_parent else None
+            try:
+                if len(best_path) >= 2:
+                    skip_node = best_path[-2][2]
+                elif len(best_path) == 1:
+                    skip_node = best_parent.skip_node if best_parent else None
+            except TypeError:
+                continue # No feasible route to get here
 
             newnode = Node(
                 layer     = layer,
