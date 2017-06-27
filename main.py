@@ -14,6 +14,8 @@ from math import exp, log
 
 red = init_redis()
 
+RADIUS = 150
+
 @task
 def loaddata():
     """loads the graph data obtained from OSM overpass api"""
@@ -76,15 +78,25 @@ def triangles():
     json.dump(feature_collection(features), open('./build/triangles.geojson', 'w'))
 
 @task
-def ways_from_gps(latitude, longitude):
-    return lua('ways_from_gps', 150, longitude, latitude)
+def ways_from_gps(longitude, latitude):
+    def get_coordinates(way):
+        return [list(map(float, coords)) for coords in lua('nodes_from_way', way)]
+
+    def ans_to_json(way, dist, nearestnode):
+        return line_string(get_coordinates(way), {
+            'dist': dist.decode('utf8'),
+        })
+
+    json.dump(feature_collection(
+        list(starmap(ans_to_json, lua('ways_from_gps', RADIUS, longitude, latitude))) + [point([float(longitude), float(latitude)])]
+    ), open('./build/ways_from_gps.geojson', 'w'), indent=2)
 
 @task
 def mapmatch(layers):
     coordinates = loadcoords()
 
     closest_ways = [
-        lua('ways_from_gps', 150, *coords) for coords in coordinates
+        lua('ways_from_gps', RADIUS, *coords) for coords in coordinates
     ]
 
     parents = dict()
