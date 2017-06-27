@@ -101,7 +101,7 @@ def mapmatch(layers):
 
     parents = dict()
 
-    for layer in range(1, int(layers)):
+    for layer in range(1, min(int(layers), len(coordinates))):
         print('processing layer {}'.format(layer))
         total_links = len(closest_ways[layer-1])*len(closest_ways[layer])
         count = 0
@@ -117,6 +117,9 @@ def mapmatch(layers):
 
             for wayf, distf, nearestnodef in closest_ways[layer-1]: # f for from
                 cur_parent = parents.get(Node.hash(layer-1, wayf))
+
+                if layer>1 and cur_parent is None:
+                    continue # these nodes are not useful as their parents couldn't be routed
 
                 try:
                     length, path = lua('a_star', nearestnodef, nearestnodet, cur_parent.skip_node if cur_parent is not None else None)
