@@ -76,11 +76,15 @@ def triangles():
     json.dump(feature_collection(features), open('./build/triangles.geojson', 'w'))
 
 @task
+def ways_from_gps(latitude, longitude):
+    return lua('ways_from_gps', 150, longitude, latitude)
+
+@task
 def mapmatch(layers):
     coordinates = loadcoords()
 
     closest_ways = [
-        lua('ways_from_gps', 150, layer, *coords) for layer, coords in enumerate(coordinates)
+        lua('ways_from_gps', 150, *coords) for coords in coordinates
     ]
 
     parents = dict()
