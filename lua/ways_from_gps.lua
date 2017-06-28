@@ -1,6 +1,7 @@
 -- Gets all the ways a node belogs to
 local ways = {}
 local rad = ARGV[1]
+-- TODO receive small radius
 local lon = ARGV[2]
 local lat = ARGV[3]
 
@@ -74,6 +75,7 @@ for i, node in pairs(redis.call('georadius', 'base:nodehash', lon, lat, rad, 'm'
 			end
 
 			-- TODO replace nodename below with closest phantom
+			-- TODO discriminate ways too far from gps, using small radio
 			ways[#ways+1] = {
 				way,
 				nodename

@@ -97,6 +97,7 @@ def mapmatch(layers):
     # TODO remove phantoms from geohash
     # TODO empty set of phantom nodes
 
+    # TODO send two radiuses to this function? big and small
     closest_ways = [
         lua('ways_from_gps', RADIUS, *coords) for coords in coordinates
     ]
