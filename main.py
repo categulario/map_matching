@@ -300,8 +300,12 @@ def projection():
 
         sol = d1/d2 * mend
 
+        a = sol[0] / mend[0]
+
         res = sol + start
-        plt.plot(res[0], res[1], 'b+')
+
+        if a<=1 and a>=0:
+            plt.plot(res[0], res[1], 'b+')
 
     plt.axis('equal')
     plt.plot(line[:,0], line[:,1], 'r-')
