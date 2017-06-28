@@ -261,6 +261,53 @@ def osrmresponse(responsefile):
         line_string(map(to_coordinate, data['tracepoints'])),
     ]), sys.stdout)
 
+@task
+def projection():
+    from matplotlib import pyplot as plt
+    import numpy as np
+
+    line = np.array([
+        [
+            -96.8750228881836,
+            19.50835609436035
+        ],
+        [
+            -96.87425994873047,
+            19.50839614868164
+        ],
+        [
+            -96.8729476928711,
+            19.508760452270508
+        ],
+        [
+            -96.86822509765625,
+            19.507137298583984
+        ]
+    ])
+
+    point = np.array([
+        -96.87296748161316,
+        19.508070719631917
+    ])
+
+    for start, end in zip(line[:-1], line[1:]):
+        # translate to make the start point the origin
+        mend = end - start
+        mpoint = point - start
+
+        d1 = np.dot(mpoint, mend)
+        d2 = np.dot(mend, mend)
+
+        sol = d1/d2 * mend
+
+        res = sol + start
+        plt.plot(res[0], res[1], 'b+')
+
+    plt.axis('equal')
+    plt.plot(line[:,0], line[:,1], 'r-')
+    plt.plot(point[0], point[1], 'g+')
+    plt.show()
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Compute the map matching route')
 
