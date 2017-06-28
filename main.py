@@ -14,7 +14,7 @@ from math import exp, log
 
 red = init_redis()
 
-RADIUS = 150
+RADIUS = 150 # changes after parse_args
 
 @task
 def loaddata():
@@ -315,8 +315,11 @@ if __name__ == '__main__':
     parser.add_argument('task', help='the task to execute', choices=tasks)
     parser.add_argument('args', nargs='*', help='arguments for the task')
     parser.add_argument('-s', '--silent', action='store_true')
+    parser.add_argument('-r', '--radius', type=int, help='The radius for various searches', default=150)
 
     args = parser.parse_args()
+
+    RADIUS = args.radius
 
     val = locals()[args.task](*args.args)
 
