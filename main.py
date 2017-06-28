@@ -94,6 +94,9 @@ def mapmatch(layers):
     coordinates = loadcoords()
     layers = min(int(layers), len(coordinates))
 
+    # TODO remove phantoms from geohash
+    # TODO empty set of phantom nodes
+
     closest_ways = [
         lua('ways_from_gps', RADIUS, *coords) for coords in coordinates
     ]
