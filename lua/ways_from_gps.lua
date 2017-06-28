@@ -15,7 +15,6 @@ for i, node in pairs(redis.call('georadius', 'base:nodehash', lon, lat, rad, 'm'
 		if redis.call('sadd', 'tmp:gps:ways', way) == 1 then
 			ways[#ways+1] = {
 				way,
-				nodedist,
 				nodename
 			}
 		end

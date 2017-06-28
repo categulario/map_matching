@@ -109,13 +109,13 @@ def mapmatch(layers):
         best_of_layer = None
         best_of_layer_cost = INF
 
-        for wayt, distt, nearestnodet in closest_ways[layer]: # t for to
+        for wayt, nearestnodet in closest_ways[layer]: # t for to
             best_cost   = INF
             best_parent = None
             best_path   = None
             best_way    = None
 
-            for wayf, distf, nearestnodef in closest_ways[layer-1]: # f for from
+            for wayf, nearestnodef in closest_ways[layer-1]: # f for from
                 cur_parent = parents.get(Node.hash(layer-1, wayf))
 
                 if layer>1 and cur_parent is None:
@@ -295,10 +295,7 @@ def projection():
         mend = end - start
         mpoint = point - start
 
-        d1 = np.dot(mpoint, mend)
-        d2 = np.dot(mend, mend)
-
-        sol = d1/d2 * mend
+        sol = np.dot(mpoint, mend)/np.dot(mend, mend) * mend
 
         a = sol[0] / mend[0]
 
