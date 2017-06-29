@@ -85,8 +85,12 @@ def ways_from_gps(longitude, latitude):
     def ans_to_json(way, nearestnode):
         return line_string(get_coordinates(way))
 
+    ways, phantoms = lua('ways_from_gps', RADIUS, longitude, latitude)
+
+    return phantoms
+
     json.dump(feature_collection(
-        list(starmap(ans_to_json, lua('ways_from_gps', RADIUS, longitude, latitude))) + [point([float(longitude), float(latitude)])]
+        list(starmap(ans_to_json, ways)) + [point([float(longitude), float(latitude)])]
     ), open('./build/ways_from_gps.geojson', 'w'), indent=2)
 
 @task

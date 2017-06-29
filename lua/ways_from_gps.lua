@@ -1,5 +1,6 @@
 -- Gets all the ways a node belogs to
 local ways = {}
+local phantoms = {}
 local rad = ARGV[1]
 -- TODO receive small radius
 local lon = ARGV[2]
@@ -52,9 +53,9 @@ for i, node in pairs(redis.call('georadius', 'base:nodehash', lon, lat, rad, 'm'
 	for j, way in pairs(redis.call('lrange', 'base:node:'..nodename..':ways', 0, -1)) do
 		if redis.call('sadd', 'tmp:gps:ways', way) == 1 then
 			-- add the projection of gps in the line
-			wnodes = redis.call('lrange', 'base:way:'..way..':nodes', 0, -1)
+			local wnodes = redis.call('lrange', 'base:way:'..way..':nodes', 0, -1)
 
-			for k=1,#nodes-1 do
+			for k = 1 , #wnodes-1 do
 				local n1 = redis.call('geopos', 'base:nodehash', wnodes[k])[1]
 				local n2 = redis.call('geopos', 'base:nodehash', wnodes[k+1])[1]
 
@@ -62,11 +63,12 @@ for i, node in pairs(redis.call('georadius', 'base:nodehash', lon, lat, rad, 'm'
 
 				-- projection is inside segment
 				if a<=1 and a>=0 then
-					-- TODO compute new node coordinates
+					local phantom_coords = add(prod(a, sub(n2, n1)), n1)
+					local phantom_name = wnodes[k]..'-'..wnodes[k+1]
 					-- TODO add node to geohash
 					-- TODO add node to phantom node set in redis
-					-- TODO comparte with other phantoms in this segment and choose smallest
-					-- TODO add to local table to return the set of phantom nodes
+					-- TODO compare with other phantoms in this segment and choose smallest
+					phantoms[#phantoms+1] = { phantom_name, phantom_coords }
 				end
 			end
 
@@ -80,5 +82,4 @@ for i, node in pairs(redis.call('georadius', 'base:nodehash', lon, lat, rad, 'm'
 	end
 end
 
--- TODO return found phantoms too
-return ways
+return {ways, phantoms}
