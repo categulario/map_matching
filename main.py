@@ -80,6 +80,8 @@ def triangles():
 
 @task
 def ways_from_gps(longitude, latitude):
+    lua('clear_phantoms')
+
     def get_coordinates(way):
         return [list(map(float, coords)) for coords in lua('nodes_from_way', way)]
 
@@ -102,8 +104,7 @@ def mapmatch(layers):
     coordinates = loadcoords()
     layers = min(int(layers), len(coordinates))
 
-    # TODO remove phantoms from geohash
-    # TODO empty set of phantom nodes
+    lua('clear_phantoms')
 
     # TODO send two radiuses to this function? big and small
     closest_ways = [
