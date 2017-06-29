@@ -6,8 +6,9 @@ from lib import *
 from lib.graph import Node, INF
 from lib.geo import *
 from pprint import pprint
+from operator import add
 from itertools import starmap
-from functools import partial
+from functools import partial, reduce
 from heapq import heappush, heappop
 import argparse
 from math import exp, log
@@ -83,7 +84,7 @@ def ways_from_gps(longitude, latitude):
         return [list(map(float, coords)) for coords in lua('nodes_from_way', way)]
 
     def way(way, nearestnode):
-        return line_string(get_coordinates(way))
+        return [point(coords) for coords in get_coordinates(way)]
 
     def phantom(name, coords):
         return point(map(float, coords), {
@@ -93,7 +94,7 @@ def ways_from_gps(longitude, latitude):
     ways, phantoms = lua('ways_from_gps', RADIUS, longitude, latitude)
 
     json.dump(feature_collection(
-        list(starmap(way, ways)) + [point([float(longitude), float(latitude)])] + list(starmap(phantom, phantoms))
+        reduce(add, starmap(way, ways)) + [point([float(longitude), float(latitude)])]
     ), open('./build/ways_from_gps.geojson', 'w'), indent=2)
 
 @task

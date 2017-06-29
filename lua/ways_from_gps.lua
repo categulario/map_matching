@@ -63,12 +63,17 @@ for i, node in pairs(redis.call('georadius', 'base:nodehash', lon, lat, rad, 'm'
 
 				-- projection is inside segment
 				if a<=1 and a>=0 then
-					local latlon = add(prod(a, sub(n2, n1)), n1)
+					local lonlat = add(prod(a, sub(n2, n1)), n1)
 					local phantom_name = wnodes[k]..'-'..wnodes[k+1]
-					-- TODO add node to geohash
-					-- TODO add node to phantom node set in redis
-					-- TODO compare with other phantoms in this segment and choose smallest
-					phantoms[#phantoms+1] = { phantom_name, {tostring(latlon[1]), tostring(latlon[2]) }}
+
+					redis.call('geoadd', 'base:nodehash', lonlat[1], lonlat[2], phantom_name)
+					redis.call('sadd', 'tmp:phantoms', phantom_name)
+					redis.call('linsert', 'base:way:'..way..':nodes', 'after', wnodes[k], phantom_name)
+					redis.call('rpush', 'tmp:phantom:'..phantom_name..':ways', way)
+
+					-- TODO compare with other phantoms in this segment and choose closest
+
+					phantoms[#phantoms+1] = { phantom_name, {tostring(lonlat[1]), tostring(lonlat[2]) }}
 				end
 			end
 
