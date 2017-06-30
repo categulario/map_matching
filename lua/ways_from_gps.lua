@@ -102,7 +102,11 @@ for i, node in pairs(redis.call('georadius', 'base:nodehash', lon, lat, rad, 'm'
 			end
 
 			if cphan ~= nil then
-				nodename = cphan
+				-- nodename = cphan
+				ways[#ways+1] = {
+					way,
+					cphan
+				}
 			end
 
 			-- TODO discriminate ways too far from gps, using small radio
