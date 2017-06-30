@@ -86,17 +86,17 @@ def ways_from_gps(longitude, latitude):
         return [list(map(float, coords)) for coords in lua('nodes_from_way', way)]
 
     def way(way, nearestnode):
-        return [point(coords) for coords in get_coordinates(way)]
+        return line_string(get_coordinates(way))
 
     def phantom(name, coords):
         return point(map(float, coords), {
             'name': name.decode('utf8'),
         })
 
-    ways, phantoms = lua('ways_from_gps', RADIUS, longitude, latitude)
+    ways = lua('ways_from_gps', RADIUS, longitude, latitude)
 
     json.dump(feature_collection(
-        reduce(add, starmap(way, ways)) + [point([float(longitude), float(latitude)])]
+        list(starmap(way, ways)) + [point([float(longitude), float(latitude)])]
     ), open('./build/ways_from_gps.geojson', 'w'), indent=2)
 
 @task
