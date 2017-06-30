@@ -246,13 +246,6 @@ def loadlua():
     ))
 
 @task
-def lslua():
-    return '\n'.join(map(
-        lambda s: '{}: {}'.format(s[0].decode('utf8').split(':')[2], s[1].decode('utf8')),
-        lua('list_scripts')
-    ))
-
-@task
 def lua(scriptname, *args):
     sha = red.get('base:script:{}'.format(scriptname))
 
