@@ -43,6 +43,22 @@ local function get_projection(n1, n2, p)
 	return sol[1] / tn2[1]
 end
 
+-- Haversine formula, translated from the python version
+local function distance(lon1, lat1, lon2, lat2)
+    -- convert decimal degrees to radians 
+	local r = 0.017453292519943
+    local lon1, lat1, lon2, lat2 = lon1*r, lat1*r, lon2*r, lat2*r
+
+    -- haversine formula 
+    local dlon = lon2 - lon1 
+    local dlat = lat2 - lat1 
+    local a = math.pow(math.sin(dlat/2), 2) + math.cos(lat1) * math.cos(lat2) * math.pow(math.sin(dlon/2), 2)
+    local c = 2 * math.asin(math.sqrt(a)) 
+    local m = 6367 * c * 1000
+
+    return m
+end
+
 redis.call('del', 'tmp:gps:ways')
 
 -- add to set all ways near a gps position
@@ -54,6 +70,9 @@ for i, node in pairs(redis.call('georadius', 'base:nodehash', lon, lat, rad, 'm'
 		if redis.call('sadd', 'tmp:gps:ways', way) == 1 then
 			-- add the projection of gps in the line
 			local wnodes = redis.call('lrange', 'base:way:'..way..':nodes', 0, -1)
+
+			local cphan = nil
+			local cdist = 1e309
 
 			for k = 1 , #wnodes-1 do
 				local n1 = redis.call('geopos', 'base:nodehash', wnodes[k])[1]
@@ -71,13 +90,21 @@ for i, node in pairs(redis.call('georadius', 'base:nodehash', lon, lat, rad, 'm'
 					redis.call('linsert', 'base:way:'..way..':nodes', 'after', wnodes[k], phantom_name)
 					redis.call('rpush', 'tmp:phantom:'..phantom_name..':ways', way)
 
-					-- TODO compare with other phantoms in this segment and choose closest
+					local phan_dist = distance(lonlat[1], lonlat[2], lon, lat)
+
+					if phan_dist < cdist then
+						cdist = phan_dist
+						cphan = phantom_name
+					end
 
 					phantoms[#phantoms+1] = { phantom_name, {tostring(lonlat[1]), tostring(lonlat[2]) }}
 				end
 			end
 
-			-- TODO replace nodename below with closest phantom
+			if cphan ~= nil then
+				nodename = cphan
+			end
+
 			-- TODO discriminate ways too far from gps, using small radio
 			ways[#ways+1] = {
 				way,
@@ -87,4 +114,4 @@ for i, node in pairs(redis.call('georadius', 'base:nodehash', lon, lat, rad, 'm'
 	end
 end
 
-return {ways, phantoms}
+return ways
