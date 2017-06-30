@@ -92,6 +92,7 @@ def ways_from_gps(longitude, latitude):
 @task
 def mapmatch(layers):
     coordinates = loadcoords()
+    layers = min(int(layers), len(coordinates))
 
     closest_ways = [
         lua('ways_from_gps', RADIUS, *coords) for coords in coordinates
@@ -99,7 +100,7 @@ def mapmatch(layers):
 
     parents = dict()
 
-    for layer in range(1, min(int(layers), len(coordinates))):
+    for layer in range(1, layers):
         print('processing layer {}'.format(layer))
         total_links = len(closest_ways[layer-1])*len(closest_ways[layer])
         count = 0
@@ -184,7 +185,7 @@ def mapmatch(layers):
 
         curnode = curnode.parent
 
-    json.dump(feature_collection(lines + [line_string(coordinates, {
+    json.dump(feature_collection(lines + [line_string(coordinates[:layers], {
         'stroke': '#000000',
         'stroke-width': 4,
         'stroke-opacity': .5,
