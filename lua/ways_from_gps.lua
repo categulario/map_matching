@@ -83,7 +83,7 @@ for i, node in pairs(redis.call('georadius', 'base:nodehash', lon, lat, rad, 'm'
 				-- projection is inside segment
 				if a<=1 and a>=0 then
 					local lonlat = add(prod(a, sub(n2, n1)), n1)
-					local phantom_name = wnodes[k]..'-'..wnodes[k+1]
+					local phantom_name = wnodes[k]..'_'..wnodes[k+1]
 
 					redis.call('geoadd', 'base:nodehash', lonlat[1], lonlat[2], phantom_name)
 					redis.call('sadd', 'tmp:phantoms', phantom_name)
