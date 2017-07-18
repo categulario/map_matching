@@ -1,5 +1,7 @@
 # Map-Matching Algorithm
 
+[![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/map_matching/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 My implementation of the map matching algorithm from [this article](https://www.researchgate.net/publication/308856380_Fast_Hidden_Markov_Model_Map-Matching_for_Sparse_and_Noisy_Trajectories). The goal is to get the streets from a gps track.
 
 For reference read the resulting article
