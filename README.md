@@ -4,7 +4,11 @@
 
 My implementation of the map matching algorithm from [this article](https://www.researchgate.net/publication/308856380_Fast_Hidden_Markov_Model_Map-Matching_for_Sparse_and_Noisy_Trajectories). The goal is to get the streets from a gps track.
 
-For reference read the resulting article
+This is how it looks like:
+![image](http://categulario.tk/map_matching_result.png)
+The gray line is the gps trace and the colored lines describe the map-matched most-likely route in the streets for the vehicle.
+
+For reference read the resulting article.
 
 ## Setup
 
