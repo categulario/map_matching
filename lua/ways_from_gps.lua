@@ -45,18 +45,18 @@ end
 
 -- Haversine formula, translated from the python version
 local function distance(lon1, lat1, lon2, lat2)
-    -- convert decimal degrees to radians 
+	-- convert decimal degrees to radians
 	local r = 0.017453292519943
-    local lon1, lat1, lon2, lat2 = lon1*r, lat1*r, lon2*r, lat2*r
+	local lon1, lat1, lon2, lat2 = lon1*r, lat1*r, lon2*r, lat2*r
 
-    -- haversine formula 
-    local dlon = lon2 - lon1 
-    local dlat = lat2 - lat1 
-    local a = math.pow(math.sin(dlat/2), 2) + math.cos(lat1) * math.cos(lat2) * math.pow(math.sin(dlon/2), 2)
-    local c = 2 * math.asin(math.sqrt(a)) 
-    local m = 6367 * c * 1000
+	-- haversine formula
+	local dlon = lon2 - lon1
+	local dlat = lat2 - lat1
+	local a = math.pow(math.sin(dlat/2), 2) + math.cos(lat1) * math.cos(lat2) * math.pow(math.sin(dlon/2), 2)
+	local c = 2 * math.asin(math.sqrt(a))
+	local m = 6367 * c * 1000
 
-    return m
+	return m
 end
 
 redis.call('del', 'tmp:gps:ways')
