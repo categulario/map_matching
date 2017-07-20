@@ -16,7 +16,8 @@ Install:
 Download the data using the overpass api, there is a simple curl command to do that in the `overpass/` folder:
 
 ```bash
-$ ./overpass/get_street_graph.sh
+$ cd overpass/
+$ ./get_street_graph.sh
 ```
 
 Install python dependencies. You may want to put them inside a virtualenv:

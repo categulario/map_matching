@@ -260,52 +260,20 @@ def osrmresponse(responsefile):
     ]), sys.stdout)
 
 @task
-def projection():
-    from matplotlib import pyplot as plt
-    import numpy as np
+def project(lon, lat):
+    def to_feature(distance, lon, lat):
+        return point([float(lon), float(lat)], {
+            'dist': distance,
+        })
 
-    line = np.array([
-        [
-            -96.8750228881836,
-            19.50835609436035
-        ],
-        [
-            -96.87425994873047,
-            19.50839614868164
-        ],
-        [
-            -96.8729476928711,
-            19.508760452270508
-        ],
-        [
-            -96.86822509765625,
-            19.507137298583984
-        ]
-    ])
-
-    point = np.array([
-        -96.87296748161316,
-        19.508070719631917
-    ])
-
-    for start, end in zip(line[:-1], line[1:]):
-        # translate to make the start point the origin
-        mend = end - start
-        mpoint = point - start
-
-        sol = np.dot(mpoint, mend)/np.dot(mend, mend) * mend
-
-        a = sol[0] / mend[0]
-
-        res = sol + start
-
-        if a<=1 and a>=0:
-            plt.plot(res[0], res[1], 'b+')
-
-    plt.axis('equal')
-    plt.plot(line[:,0], line[:,1], 'r-')
-    plt.plot(point[0], point[1], 'g+')
-    plt.show()
+    json.dump(feature_collection([
+        point([float(lon), float(lat)], {
+            'marker-color': '#3ba048',
+        }),
+    ] + list(starmap(
+        to_feature,
+        lua('project_point', 150, lon, lat)
+    ))), open('./build/projection.json', 'w'))
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Compute the map matching route')
