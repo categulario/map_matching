@@ -15,7 +15,8 @@ from math import exp, log
 
 red = init_redis()
 
-RADIUS = 150 # changes after parse_args
+BIG_RADIUS = 150
+RADIUS     = 75 # changes after parse_args
 
 @task
 def loaddata():
@@ -100,50 +101,57 @@ def ways_from_gps(longitude, latitude):
     ), open('./build/ways_from_gps.geojson', 'w'), indent=2)
 
 @task
+def nodes_from_gps(longitude, latitude):
+    lua('clear_phantoms')
+
+    print(lua('nodes_from_gps', RADIUS, BIG_RADIUS, longitude, latitude))
+
+@task
 def mapmatch(layers):
     coordinates = loadcoords()
     layers = min(int(layers), len(coordinates))
 
     lua('clear_phantoms')
 
-    # TODO send two radiuses to this function? big and small
-    closest_ways = [
-        lua('ways_from_gps', RADIUS, *coords) for coords in coordinates
+    def debyte(node):
+        return node[0].decode('utf8'), float(node[1])
+
+    closest_nodes = [
+        list(map(debyte, lua('nodes_from_gps', RADIUS, BIG_RADIUS, *coords))) for coords in coordinates
     ]
 
     parents = dict()
 
     for layer in range(1, layers):
         print('processing layer {}'.format(layer))
-        total_links = len(closest_ways[layer-1])*len(closest_ways[layer])
+        total_links = len(closest_nodes[layer-1])*len(closest_nodes[layer])
         count = 0
 
         best_of_layer = None
         best_of_layer_cost = INF
 
-        for wayt, nearestnodet in closest_ways[layer]: # t for to
+        for node_to, dist_to in closest_nodes[layer]: # t for to
             best_cost   = INF
             best_parent = None
             best_path   = None
-            best_way    = None
 
-            for wayf, nearestnodef in closest_ways[layer-1]: # f for from
-                cur_parent = parents.get(Node.hash(layer-1, wayf))
+            for node_from, dist_from in closest_nodes[layer-1]: # f for from
+                cur_parent = parents.get(Node.hash(layer-1, node_from))
 
                 if layer>1 and cur_parent is None:
                     continue # these nodes are not useful as their parents couldn't be routed
 
                 try:
-                    length, path = lua('a_star', nearestnodef, nearestnodet, cur_parent.skip_node if cur_parent is not None else None)
+                    length, path = lua('a_star', node_from, node_to, cur_parent.skip_node if cur_parent is not None else None)
                 except TypeError as e:
                     continue # no route from start to end
 
                 # difference between path length and great circle distance between the two gps points
                 curcost = log(abs(length - distance(*(coordinates[layer-1]+coordinates[layer]))))
                 # distance between start of path and first gps point
-                curcost += distance(*(coordinates[layer-1] + list(map(float, red.geopos('base:nodehash', nearestnodef)[0]))))
+                curcost += dist_from
                 # distance between end of path and second gps point
-                curcost += distance(*(coordinates[layer] + list(map(float, red.geopos('base:nodehash', nearestnodet)[0]))))
+                curcost += dist_to
 
                 if cur_parent: curcost += cur_parent.cost
 
@@ -151,7 +159,6 @@ def mapmatch(layers):
                     best_cost   = curcost
                     best_parent = cur_parent
                     best_path   = path
-                    best_way    = wayt
 
                 count += 1
                 print('processed {} of {} links for this layer'.format(count, total_links), end='\r', flush=True)
@@ -166,14 +173,13 @@ def mapmatch(layers):
 
             newnode = Node(
                 layer     = layer,
-                way       = wayt,
                 cost      = best_cost,
                 path      = best_path,
                 parent    = best_parent,
                 skip_node = skip_node,
             )
 
-            parents[Node.hash(layer, wayt)] = newnode
+            parents[Node.hash(layer, node_to)] = newnode
 
             if newnode.cost < best_of_layer_cost:
                 best_of_layer = newnode
@@ -192,7 +198,6 @@ def mapmatch(layers):
                 (list(map(float, pos)) for pos in curnode.path),
                 {
                     'layer': curnode.layer,
-                    'way': curnode.way.decode('utf8'),
                 }
             ))
 
@@ -320,7 +325,7 @@ if __name__ == '__main__':
     parser.add_argument('task', help='the task to execute', choices=tasks)
     parser.add_argument('args', nargs='*', help='arguments for the task')
     parser.add_argument('-s', '--silent', action='store_true')
-    parser.add_argument('-r', '--radius', type=int, help='The radius for various searches', default=150)
+    parser.add_argument('-r', '--radius', type=int, help='The radius for various searches', default=RADIUS)
 
     args = parser.parse_args()
 
