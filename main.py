@@ -21,6 +21,11 @@ RADIUS     = 75 # changes after parse_args
 @task
 def loaddata():
     """loads the graph data obtained from OSM overpass api"""
+
+    # first clear prev data
+    with open('./lua/del_redis_keys.lua') as delscript:
+        red.eval(delscript.read(), 0, '*')
+
     data = json.load(open('./overpass/street_graph.json'))
     total = len(data['elements'])
 
