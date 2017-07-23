@@ -112,9 +112,10 @@ def nodes_from_gps(longitude, latitude):
     print(lua('nodes_from_gps', RADIUS, BIG_RADIUS, longitude, latitude))
 
 @task
-def mapmatch(layers):
-    coordinates = loadcoords()
-    layers = min(int(layers), len(coordinates))
+def mapmatch(filename, layers=1000):
+    data        = json.load(open(filename))
+    coordinates = data['features'][0]['geometry']['coordinates']
+    layers      = min(int(layers), len(coordinates))
 
     lua('clear_phantoms')
 
@@ -122,7 +123,7 @@ def mapmatch(layers):
         return node[0].decode('utf8'), float(node[1])
 
     closest_nodes = [
-        list(map(debyte, lua('nodes_from_gps', RADIUS, BIG_RADIUS, *coords))) for coords in coordinates
+        list(map(debyte, lua('nodes_from_gps', RADIUS, BIG_RADIUS, *coords))) for index, coords in enumerate(coordinates) if index <= layers
     ]
 
     parents = dict()
