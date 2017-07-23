@@ -85,9 +85,14 @@ for i, node in pairs(redis.call('georadius', 'base:nodehash', lon, lat, big_rad,
                     local phantom_name = way_nodes[k]..'_'..way_nodes[k+1]
 
                     redis.call('geoadd', 'base:nodehash', lonlat[1], lonlat[2], phantom_name)
-                    redis.call('sadd', 'tmp:phantoms', phantom_name)
-                    redis.call('linsert', 'base:way:'..way..':nodes', 'after', way_nodes[k], phantom_name)
-                    redis.call('rpush', 'tmp:phantom:'..phantom_name..':ways', way)
+
+                    if tonumber(redis.call('geodist', 'base:nodehash', phantom_name, way_nodes[k])) >= 5 and tonumber(redis.call('geodist', 'base:nodehash', phantom_name, way_nodes[k+1])) >= 5 then
+                        redis.call('sadd', 'tmp:phantoms', phantom_name)
+                        redis.call('linsert', 'base:way:'..way..':nodes', 'after', way_nodes[k], phantom_name)
+                        redis.call('rpush', 'tmp:phantom:'..phantom_name..':ways', way)
+                    else
+                        redis.call('zrem', 'base:nodehash', phantom_name)
+                    end
                 end
             end
         end
