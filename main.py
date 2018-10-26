@@ -1,20 +1,19 @@
 #!/usr/bin/env python3
-import json
-import sys
-import os
-from lib import *
-from lib.graph import Node, INF
-from lib.geo import *
-from pprint import pprint
 from itertools import starmap
-from functools import partial
-from heapq import heappush, heappop
+from lib import init_redis, task, loadcoords, tasks
+from lib.geo import line_string, feature_collection, point, d
+from lib.graph import Node, INF
+from math import log
+from pprint import pprint
 import argparse
-from math import exp, log
+import json
+import os
+import sys
 
 red = init_redis()
 
-RADIUS = 150 # changes after parse_args
+RADIUS = 150  # changes after parse_args
+
 
 @task
 def loaddata():
@@ -24,7 +23,7 @@ def loaddata():
 
     for i, element in enumerate(data['elements']):
         etype = element['type']
-        eid   = element['id']
+        eid = element['id']
 
         if etype == 'node':
             # load to GEOHASH with ID
@@ -49,6 +48,7 @@ def loaddata():
         print('loaded {}/{}'.format(i+1, total), end='\r', flush=True)
 
     return 'done'
+
 
 @task
 def triangles():
@@ -75,19 +75,30 @@ def triangles():
     features.append(line_string([coords[0]] + newlinecoords + [coords[-1]]))
     features.append(line_string(coords))
 
-    json.dump(feature_collection(features), open('./build/triangles.geojson', 'w'))
+    json.dump(
+        feature_collection(features),
+        open('./build/triangles.geojson', 'w')
+    )
+
 
 @task
 def ways_from_gps(longitude, latitude):
     def get_coordinates(way):
-        return [list(map(float, coords)) for coords in lua('nodes_from_way', way)]
+        return [
+            list(map(float, coords))
+            for coords in lua('nodes_from_way', way)
+        ]
 
     def ans_to_json(way, nearestnode):
         return line_string(get_coordinates(way))
 
     json.dump(feature_collection(
-        list(starmap(ans_to_json, lua('ways_from_gps', RADIUS, longitude, latitude))) + [point([float(longitude), float(latitude)])]
+        list(starmap(
+            ans_to_json,
+            lua('ways_from_gps', RADIUS, longitude, latitude)
+        )) + [point([float(longitude), float(latitude)])]
     ), open('./build/ways_from_gps.geojson', 'w'), indent=2)
+
 
 @task
 def mapmatch(layers):
@@ -107,40 +118,55 @@ def mapmatch(layers):
         best_of_layer = None
         best_of_layer_cost = INF
 
-        for wayt, nearestnodet in closest_ways[layer]: # t for to
-            best_cost   = INF
+        for wayt, nearestnodet in closest_ways[layer]:  # t for to
+            best_cost = INF
             best_parent = None
-            best_path   = None
-            best_way    = None
+            best_path = None
 
-            for wayf, nearestnodef in closest_ways[layer-1]: # f for from
-                cur_parent = parents.get(Node.hash(layer-1, wayf))
+            for wayf, nearestnodef in closest_ways[layer-1]:  # f for from
+                parent = parents.get(Node.hash(layer-1, wayf))
 
-                if layer>1 and cur_parent is None:
-                    continue # these nodes are not useful as their parents couldn't be routed
+                if layer > 1 and parent is None:
+                    # these nodes are not useful as their parents couldn't be
+                    # routed
+                    continue
 
                 try:
-                    length, path = lua('a_star', nearestnodef, nearestnodet, cur_parent.skip_node if cur_parent is not None else None)
-                except TypeError as e:
-                    continue # no route from start to end
+                    length, path = lua(
+                        'a_star',
+                        nearestnodef,
+                        nearestnodet,
+                        parent.skip_node if parent is not None else None
+                    )
+                except TypeError:
+                    continue  # no route from start to end
 
-                # difference between path length and great circle distance between the two gps points
-                curcost = log(abs(length - distance(*(coordinates[layer-1]+coordinates[layer]))))
+                # difference between path length and great circle distance
+                # between the two gps points
+                curcost = log(abs(
+                    length - d(*(coordinates[layer-1]+coordinates[layer]))
+                ))
                 # distance between start of path and first gps point
-                curcost += distance(*(coordinates[layer-1] + list(map(float, red.geopos('base:nodehash', nearestnodef)[0]))))
+                curcost += d(*(coordinates[layer-1] + list(map(
+                    float, red.geopos('base:nodehash', nearestnodef)[0]
+                ))))
                 # distance between end of path and second gps point
-                curcost += distance(*(coordinates[layer] + list(map(float, red.geopos('base:nodehash', nearestnodet)[0]))))
+                curcost += d(*(coordinates[layer] + list(map(
+                    float, red.geopos('base:nodehash', nearestnodet)[0]
+                ))))
 
-                if cur_parent: curcost += cur_parent.cost
+                if parent:
+                    curcost += parent.cost
 
                 if curcost < best_cost:
-                    best_cost   = curcost
-                    best_parent = cur_parent
-                    best_path   = path
-                    best_way    = wayt
+                    best_cost = curcost
+                    best_parent = parent
+                    best_path = path
 
                 count += 1
-                print('processed {} of {} links for this layer'.format(count, total_links), end='\r', flush=True)
+                print('processed {} of {} links for this layer'.format(
+                    count, total_links), end='\r', flush=True
+                )
 
             try:
                 if len(best_path) >= 2:
@@ -148,15 +174,15 @@ def mapmatch(layers):
                 elif len(best_path) == 1:
                     skip_node = best_parent.skip_node if best_parent else None
             except TypeError:
-                continue # No feasible route to get here
+                continue  # No feasible route to get here
 
             newnode = Node(
-                layer     = layer,
-                way       = wayt,
-                cost      = best_cost,
-                path      = best_path,
-                parent    = best_parent,
-                skip_node = skip_node,
+                layer=layer,
+                way=wayt,
+                cost=best_cost,
+                path=best_path,
+                parent=best_parent,
+                skip_node=skip_node,
             )
 
             parents[Node.hash(layer, wayt)] = newnode
@@ -170,7 +196,7 @@ def mapmatch(layers):
     curnode = best_of_layer
     lines = []
 
-    while curnode != None:
+    while curnode is not None:
         if len(curnode.path) == 1:
             lines.append(point(map(float, curnode.path[0])))
         else:
@@ -190,6 +216,7 @@ def mapmatch(layers):
         'stroke-opacity': .5,
     })]), open('./build/result.geojson', 'w'))
 
+
 @task
 def a_star(fromnode, tonode, skip_node=None):
     loadlua()
@@ -204,6 +231,7 @@ def a_star(fromnode, tonode, skip_node=None):
     ]), open('./build/a_star.geojson', 'w'))
 
     return route
+
 
 @task
 def loadlua():
@@ -231,12 +259,16 @@ def loadlua():
         scripts.items()
     ))
 
+
 @task
 def lslua():
     return '\n'.join(map(
-        lambda s: '{}: {}'.format(s[0].decode('utf8').split(':')[2], s[1].decode('utf8')),
+        lambda s: '{}: {}'.format(
+            s[0].decode('utf8').split(':')[2], s[1].decode('utf8')
+        ),
         lua('list_scripts')
     ))
+
 
 @task
 def lua(scriptname, *args):
@@ -248,6 +280,7 @@ def lua(scriptname, *args):
 
     return red.evalsha(sha, 0, *args)
 
+
 @task
 def osrmresponse(responsefile):
     def to_coordinate(tracepoint):
@@ -258,6 +291,7 @@ def osrmresponse(responsefile):
     json.dump(feature_collection([
         line_string(map(to_coordinate, data['tracepoints'])),
     ]), sys.stdout)
+
 
 @task
 def project(lon, lat):
@@ -275,13 +309,17 @@ def project(lon, lat):
         lua('project_point', 150, lon, lat)
     ))), open('./build/projection.json', 'w'))
 
+
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Compute the map matching route')
+    parser = argparse.ArgumentParser(
+        description='Compute the map matching route'
+    )
 
     parser.add_argument('task', help='the task to execute', choices=tasks)
     parser.add_argument('args', nargs='*', help='arguments for the task')
     parser.add_argument('-s', '--silent', action='store_true')
-    parser.add_argument('-r', '--radius', type=int, help='The radius for various searches', default=150)
+    parser.add_argument('-r', '--radius', type=int,
+                        help='The radius for various searches', default=150)
 
     args = parser.parse_args()
 
