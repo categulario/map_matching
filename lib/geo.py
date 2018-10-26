@@ -4,7 +4,7 @@ from . import random_color
 
 # http://stackoverflow.com/questions/15736995/
 # how-can-i-quickly-estimate-the-distance-between-two-latitude-longitude-points
-def distance(lon1, lat1, lon2, lat2):
+def d(lon1, lat1, lon2, lat2):
     """
     Calculate the great circle distance between two points
     on the earth (specified in decimal degrees)
