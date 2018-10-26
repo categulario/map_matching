@@ -1,4 +1,6 @@
-git+https://github.com/andymccurdy/redis-py.git@master#egg=redis
+redis
 geojsonio
 numpy
 matplotlib
+flake8
+pytest
