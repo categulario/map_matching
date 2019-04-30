@@ -42,8 +42,8 @@ Load the lua scripts:
 $ ./main.py loadlua
 ```
 
-run the mapmatching task with a number indicating how many points of the input gps track to process.
+run the mapmatching task with a geojson file with a single gps track and a number indicating how many points of the input gps track to process. Use a very hight number if you want the whole route processed
 
 ```bash
-$ ./main.py mapmatching 5
+$ ./main.py mapmatching data/route.geojson 5
 ```

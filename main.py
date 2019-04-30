@@ -51,8 +51,8 @@ def loaddata():
 
 
 @task
-def triangles():
-    coords = loadcoords()
+def triangles(filename):
+    coords = loadcoords(filename)
 
     features = []
 
@@ -101,8 +101,8 @@ def ways_from_gps(longitude, latitude):
 
 
 @task
-def mapmatch(layers):
-    coordinates = loadcoords()
+def mapmatch(filename, layers):
+    coordinates = loadcoords(filename)
 
     closest_ways = [
         lua('ways_from_gps', RADIUS, *coords) for coords in coordinates
