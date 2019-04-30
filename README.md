@@ -36,4 +36,14 @@ Upload the street graph to redis:
 $ ./main.py loaddata
 ```
 
-Finally run one of the available tasks to do something.
+Load the lua scripts:
+
+```bash
+$ ./main.py loadlua
+```
+
+run the mapmatching task with a number indicating how many points of the input gps track to process.
+
+```bash
+$ ./main.py mapmatching 5
+```
