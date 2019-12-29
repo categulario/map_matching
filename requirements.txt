@@ -1,6 +1,2 @@
 redis
-geojsonio
-numpy
-matplotlib
-flake8
-pytest
+urllib3
