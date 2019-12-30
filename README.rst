@@ -6,7 +6,7 @@ Map-Matching Algorithm
    :alt: Gitter
 
 .. image:: https://img.shields.io/github/stars/categulario/map_matching.svg
-   :target: https://github.com/perusio/drupal-with-nginx/
+   :target: https://github.com/categulario/map_matching
    :alt: GitHub stars
 
 .. image:: https://img.shields.io/github/contributors/categulario/map_matching.svg?color=red
@@ -14,8 +14,8 @@ Map-Matching Algorithm
    :alt: GitHub contributors
 
 .. image:: https://img.shields.io/github/license/categulario/map_matching.svg?color=blue
-   :target: https://github.com/categulario/map_matching/blob/master/LICENSE.md
-   :alt: MIT License
+   :target: https://github.com/categulario/map_matching/blob/master/LICENSE.txt
+   :alt: GNU GPL v3
 
 .. image:: https://gitlab.com/categulario/map_matching/badges/master/pipeline.svg
    :target: https://gitlab.com/categulario/map_matching/pipelines
