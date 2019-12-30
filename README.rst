@@ -17,12 +17,12 @@ Map-Matching Algorithm
    :target: https://github.com/categulario/map_matching/blob/master/LICENSE.md
    :alt: MIT License
 
-.. image:: http://gitlab.com/categulario/map_matching/badges/master/build.svg
-   :target: http://gitlab.com/categulario/map_matching/badges/master/build.svg
+.. image:: https://gitlab.com/categulario/map_matching/badges/master/pipeline.svg
+   :target: https://gitlab.com/categulario/map_matching/pipelines
    :alt: Build Status
 
 
-My implementation of the map matching algorithm from [this article](https://www.researchgate.net/publication/308856380_Fast_Hidden_Markov_Model_Map-Matching_for_Sparse_and_Noisy_Trajectories) (Althought with some modifications). The goal is to get the streets from a gps track.
+My implementation of the map matching algorithm from `this article <https://www.researchgate.net/publication/308856380_Fast_Hidden_Markov_Model_Map-Matching_for_Sparse_and_Noisy_Trajectories>`_ (Althought with some modifications). The goal is to get the streets from a gps track.
 
 This is how it looks like:
 
