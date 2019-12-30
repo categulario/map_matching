@@ -7,20 +7,25 @@ def test_task_context():
     tc = TaskContext()
 
     @tc.task
-    def foo(redis):
-        assert type(redis) == Redis
+    class FooTask:
+        'foo help'
+
+        def execute(self, redis, args):
+            assert type(redis) == Redis
 
     @tc.task
-    def var(a, redis):
-        assert a == 'a'
-        assert type(redis) == Redis
+    class VarTask:
+        'var help'
 
-    @tc.task
-    def log(a, redis, b):
-        assert a == 'a'
-        assert type(redis) == Redis
-        assert b == 'b'
+        def add_arguments(self, parser):
+            parser.add_argument('a')
 
-    foo()
-    var('a')
-    log('a', 'b')
+        def execute(self, args, redis):
+            assert args.a == 'a'
+            assert type(redis) == Redis
+
+    args = tc.parse_args(['foo'])
+    args.func(args)
+
+    args = tc.parse_args(['var', 'a'])
+    args.func(args)

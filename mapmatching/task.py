@@ -1,39 +1,75 @@
 from redis import Redis
 from functools import wraps
+import argparse
 
 
 class TaskContext:
 
-    def __init__(self, redis_host='localhost', redis_port=6379, redis_db=1):
+    def __init__(self):
         self.redis = None
-        self.task_names = []
 
-        self.redis_host = redis_host
-        self.redis_port = redis_port
-        self.redis_db = redis_db
+        self.parser = argparse.ArgumentParser(
+            description='Match a gps track to streets',
+        )
+        self.parser.set_defaults(func=None)
 
-    def get_redis(self):
+        # General arguments
+        self.parser.add_argument('--verbose', '-v', action='count', default=0,
+                                 help='verbosity', dest='verbosity')
+        self.parser.add_argument('--redis-host', default='localhost',
+                                 help='Redis host')
+        self.parser.add_argument('--redis-port', type=int, default=6379,
+                                 help='Redis port')
+        self.parser.add_argument('--redis-db', type=int, default=1,
+                                 help='Redis database number')
+
+        # Subparsers
+        self.subparsers = self.parser.add_subparsers(help='Sub commands')
+
+    def get_redis(self, args):
         if self.redis is None:
             self.redis = Redis(
-                host=self.redis_host,
-                port=self.redis_port,
-                db=self.redis_db,
+                host=args.redis_host,
+                port=args.redis_port,
+                db=args.redis_db,
             )
 
         return self.redis
 
-    def task(self, f):
-        self.task_names.append(f.__name__)
-
+    def task(self, class_def):
         # Inject redis parameter if present
-        redis_param_index = f.__code__.co_varnames.index('redis')
+        obj = class_def()
 
-        @wraps(f)
+        try:
+            redis_param_index = obj.execute.__code__.co_varnames.index('redis')
+        except ValueError:
+            redis_param_index = None
+
+        @wraps(obj.execute)
         def wrapper(*args, **kwds):
-            new_args = args[:redis_param_index] + \
-                (self.get_redis(),) + \
-                args[redis_param_index:]
+            if redis_param_index is None:
+                new_args = args
+            else:
+                new_args = args[:redis_param_index-1] + \
+                    (self.get_redis(args[0]),) + \
+                    args[redis_param_index-1:]
 
-            return f(*new_args, **kwds)
+            return obj.execute(*new_args, **kwds)
 
-        return wrapper
+        subparser = self.subparsers.add_parser(
+            class_def.__name__[:-4].lower(),
+            help=class_def.__doc__,
+        )
+
+        if hasattr(obj, 'add_arguments'):
+            obj.add_arguments(subparser)
+
+        subparser.set_defaults(func=wrapper)
+
+        return class_def
+
+    def parse_args(self, *args, **kwargs):
+        return self.parser.parse_args(*args, **kwargs)
+
+    def print_usage(self):
+        return self.parser.print_usage()

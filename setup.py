@@ -37,7 +37,9 @@ setup(
 
     keywords='mapmatching algorithm gps',
 
-    packages=find_packages(exclude=["*.tests", "*.tests.*", "tests.*", "tests"]),
+    packages=find_packages(exclude=[
+        "*.tests", "*.tests.*", "tests.*", "tests",
+    ]),
 
     package_data={
         'mapmatching': ['lua/*.lua'],
