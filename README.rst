@@ -66,4 +66,11 @@ Then run the match task with a geojson file with a single gps track:
 .. code:: bash
 
    $ mapmatching match -h
-   $ mapmatching match data/route.geojson
+   $ mapmatching match data/route.geojson -o output.json
+
+Optionally visualize it in the browser:
+
+.. code:: bash
+
+   $ pip install geojsonio
+   $ geojsonio output.json
