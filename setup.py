@@ -26,13 +26,23 @@ setup(
     classifiers=[
         'Development Status :: 4 - Beta',
 
+        'Environment :: Console',
+
         'Intended Audience :: Developers',
-        'Topic :: Software Development :: Libraries :: Python Modules',
+        'Intended Audience :: Education',
 
         'License :: OSI Approved :: MIT License',
 
+        'Programming Language :: Python :: 3 :: Only',
         'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
+
+        'Topic :: Scientific/Engineering :: GIS',
+        'Topic :: Scientific/Engineering :: Mathematics',
+        'Topic :: Software Development :: Libraries :: Python Modules',
     ],
 
     keywords='mapmatching algorithm gps',
