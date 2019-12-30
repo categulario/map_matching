@@ -32,21 +32,28 @@ This is how it looks like:
 
 The gray line is the gps trace and the colored lines describe the map-matched most-likely route in the streets for the vehicle.
 
-For reference read the resulting article.
+For reference read `the resulting article <https://categulario.tk/mapmatching.pdf>`_.
 
 Setup
 -----
 
-Install:
+You'll need python 3.5+ and a redis server running. The usage of a virtual environment is recommended.
 
-* python 3
-* redis >= 3.2.0
-
-Install python dependencies. You may want to put them inside a virtualenv:
+Install from pypi:
 
 .. code:: bash
 
-   $ pip install -r requirements.txt
+   $ pip install mapmatching
+
+Or install from source:
+
+.. code:: bash
+
+   $ cd mapmatching
+   $ python setup.py install
+
+Usage
+-----
 
 Download data from OpenStreetMaps:
 
@@ -55,13 +62,19 @@ Download data from OpenStreetMaps:
    $ mapmatching download -h
    $ mapmatching download -96.99107360839844 19.441181182861328 -96.846435546875 19.59616470336914 -o streets.json
 
-And load it to redis:
+And load it to redis, by default it loads it to database 1 instead of redis default of 0.
 
 .. code:: bash
 
    $ mapmatching load streets.json
 
-Then run the match task with a geojson file with a single gps track:
+The two previous commands can be chained:
+
+.. code:: bash
+
+   $ mapmatching download -96.99107360839844 19.441181182861328 -96.846435546875 19.59616470336914 | mapmatching load
+
+Then run the match task with a geojson file with a single gps track. A sample track that works with the sample bounding box is contained in the ``data/`` directory of the repository.
 
 .. code:: bash
 

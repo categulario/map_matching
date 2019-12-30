@@ -1,5 +1,6 @@
 stages:
   - test
+  - deploy
 
 python35:
   stage: test
@@ -32,3 +33,14 @@ python38:
   - pip install -r requirements.txt
   script:
   - make test
+
+twine:
+  stage: deploy
+  image: python:3.8
+  before_script:
+    - pip install -r requirements.txt
+  script:
+    - python setup.py sdist bdist_wheel
+    - twine upload -u $PYPI_USERNAME -P $PYPI_PASSWORD dist/
+  only:
+    - tags
