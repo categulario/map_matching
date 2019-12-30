@@ -39,7 +39,7 @@ class DownloadTask:
 
         # http://wiki.openstreetmap.org/wiki/Map_Features#Special_road_types
         with open(
-            os.path.join(os.path.dirname(__file__), 'overpass/streets.txt')
+            os.path.join(os.path.dirname(__file__), 'overpass/streets.overpassql')
         ) as queryfile:
             query = queryfile.read().format(
                 x1=args.x1,
