@@ -9,7 +9,7 @@
 [![MIT License](https://img.shields.io/github/license/categulario/map_matching.svg?color=blue)](https://github.com/categulario/map_matching/blob/master/LICENSE.md)
 
 
-My implementation of the map matching algorithm from [this article](https://www.researchgate.net/publication/308856380_Fast_Hidden_Markov_Model_Map-Matching_for_Sparse_and_Noisy_Trajectories). The goal is to get the streets from a gps track.
+My implementation of the map matching algorithm from [this article](https://www.researchgate.net/publication/308856380_Fast_Hidden_Markov_Model_Map-Matching_for_Sparse_and_Noisy_Trajectories) (Althought with some modifications). The goal is to get the streets from a gps track.
 
 This is how it looks like:
 ![image](http://categulario.tk/map_matching_result.png)
@@ -21,7 +21,7 @@ For reference read the resulting article.
 
 Install:
 
-* python3
+* python 3
 * redis >= 3.2.0
 
 Download the data using the overpass api, there is a simple curl command to do that in the `overpass/` folder:

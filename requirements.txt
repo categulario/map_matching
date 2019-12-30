@@ -1,2 +1,4 @@
-redis
-urllib3
+pytest
+pytest-mock
+flake8
+-e .

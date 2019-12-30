@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 from itertools import starmap
-from lib import init_redis, task, loadcoords, tasks
-from lib.geo import line_string, feature_collection, point, d
-from lib.graph import Node, INF
 from math import log
 from pprint import pprint
 import argparse
 import json
 import os
 import sys
+
+from lib import init_redis, task, loadcoords, tasks
+from lib.geo import line_string, feature_collection, point, d
+from lib.graph import Node, INF
 
 red = init_redis()
 
@@ -47,7 +48,7 @@ def loaddata():
 
         print('loaded {}/{}'.format(i+1, total), end='\r', flush=True)
 
-    return 'done'
+    return 'done!                '
 
 
 @task
