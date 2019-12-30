@@ -1,5 +1,4 @@
 from math import radians, cos, sin, asin, sqrt
-from . import random_color
 
 
 # http://stackoverflow.com/questions/15736995/
@@ -20,6 +19,10 @@ def d(lon1, lat1, lon2, lat2):
     m = 6367 * c * 1000
 
     return m
+
+
+def random_color():
+    return '#' + ''.join((choice('0123456789ABCDEF') for i in range(6)))
 
 
 def feature_collection(features):

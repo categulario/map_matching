@@ -1,4 +1,5 @@
 import argparse
+import sys
 
 from mapmatching.task import TaskContext
 
@@ -64,8 +65,6 @@ class LoadTask:
     'Loads downloaded data into redis'
 
     def add_arguments(self, parser):
-        import sys
-
         parser.add_argument(
             '-f', '--file', metavar='FILE', type=argparse.FileType('r'),
             default=sys.stdin,
@@ -109,6 +108,40 @@ class LoadTask:
         if args.verbosity > 0:
             print()
             print('Done')
+
+
+@tc.task
+class MatchTask:
+    'Matches a GPS track to streets'
+
+    def add_arguments(self, parser):
+        parser.add_argument(
+            'filename', metavar='FILE', type=argparse.FileType('r')
+        )
+        parser.add_argument(
+            '-l', '--layers', metavar='NUM', type=int, default=sys.maxsize,
+            help='match only the frist NUM points of the GPS track',
+        )
+        parser.add_argument(
+            '-r', '--radius', metavar='NUM', type=int, default=150,
+            help='radius in meters to use around gps points to find streets',
+        )
+
+    def execute(self, redis, args):
+        from mapmatching.match import match
+        from mapmatching.lua import LuaManager
+        import json
+
+        data = json.load(args.filename)
+        coordinates = data['features'][0]['geometry']['coordinates']
+
+        match(
+            redis,
+            LuaManager(redis),
+            coordinates,
+            args.layers,
+            args.radius,
+        )
 
 
 def main():

@@ -42,7 +42,7 @@ setup(
     ]),
 
     package_data={
-        'mapmatching': ['lua/*.lua'],
+        'mapmatching': ['lua/scripts/*.lua', 'overpass/*.txt'],
     },
 
     entry_points={
