@@ -1,6 +1,7 @@
 import math
 
 from mapmatching.geo import d
+from mapmatching.geojson import point, line_string, feature_collection
 
 
 class Node:
@@ -133,8 +134,8 @@ def match(redis, lua, coordinates, max_layer, radius):
 
         curnode = curnode.parent
 
-    json.dump(feature_collection(lines + [line_string(coordinates, {
+    return feature_collection(lines + [line_string(coordinates, {
         'stroke': '#000000',
         'stroke-width': 4,
         'stroke-opacity': .5,
-    })]), open('./build/result.geojson', 'w'))
+    })])
