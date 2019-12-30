@@ -1,0 +1,34 @@
+stages:
+  - test
+
+python35:
+  stage: test
+  image: python:3.5
+  before_script:
+  - pip install -r requirements.txt
+  script:
+  - make test
+
+python36:
+  stage: test
+  image: python:3.6
+  before_script:
+  - pip install -r requirements.txt
+  script:
+  - make test
+
+python37:
+  stage: test
+  image: python:3.7
+  before_script:
+  - pip install -r requirements.txt
+  script:
+  - make test
+
+python38:
+  stage: test
+  image: python:3.8
+  before_script:
+  - pip install -r requirements.txt
+  script:
+  - make test
