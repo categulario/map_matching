@@ -42,33 +42,28 @@ Install:
 * python 3
 * redis >= 3.2.0
 
-Download the data using the overpass api, there is a simple curl command to do that in the `overpass/` folder:
-
-.. code:: bash
-
-   $ cd overpass/
-   $ ./get_street_graph.sh
-
 Install python dependencies. You may want to put them inside a virtualenv:
 
 .. code:: bash
 
    $ pip install -r requirements.txt
 
-Upload the street graph to redis:
+Download data from OpenStreetMaps:
 
 .. code:: bash
 
-   $ ./main.py loaddata
+   $ mapmatching download -h
+   $ mapmatching download -96.99107360839844 19.441181182861328 -96.846435546875 19.59616470336914 -o streets.json
 
-Load the lua scripts:
-
-.. code:: bash
-
-   $ ./main.py loadlua
-
-run the mapmatching task with a geojson file with a single gps track and a number indicating how many points of the input gps track to process. Use a very hight number if you want the whole route processed
+And load it to redis:
 
 .. code:: bash
 
-   $ ./main.py mapmatch data/route.geojson 5
+   $ mapmatching load streets.json
+
+Then run the match task with a geojson file with a single gps track:
+
+.. code:: bash
+
+   $ mapmatching match -h
+   $ mapmatching match data/route.geojson
