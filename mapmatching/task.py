@@ -14,8 +14,10 @@ class TaskContext:
         self.parser.set_defaults(func=None)
 
         # General arguments
-        self.parser.add_argument('--verbose', '-v', action='count', default=0,
-                                 help='verbosity', dest='verbosity')
+        self.parser.add_argument('--verbosity', '-v', default='warning',
+                                 choices=('critical', 'error', 'warning',
+                                          'info', 'debug'),
+                                 help='verbosity')
         self.parser.add_argument('--redis-host', default='localhost',
                                  help='Redis host')
         self.parser.add_argument('--redis-port', type=int, default=6379,

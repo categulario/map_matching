@@ -1,13 +1,16 @@
 import math
+import logging
 
 from mapmatching.geo import d
 from mapmatching.geojson import point, line_string, feature_collection
 
+LOGGER = logging.getLogger(__name__)
+
 
 class Node:
 
-    def __init__(self, layer=None, way=None, cost=math.inf, path=None, parent=None,
-                 skip_node=None):
+    def __init__(self, layer=None, way=None, cost=math.inf, path=None,
+                 parent=None, skip_node=None):
         self.cost = cost
         self.path = path
         self.parent = parent
@@ -36,7 +39,7 @@ def match(redis, lua, coordinates, max_layer, radius):
     parents = dict()
 
     for layer in range(1, min(max_layer, len(coordinates))):
-        print('processing layer {}'.format(layer))
+        LOGGER.info('processing layer {}'.format(layer))
         total_links = len(closest_ways[layer-1])*len(closest_ways[layer])
         count = 0
 
@@ -88,9 +91,9 @@ def match(redis, lua, coordinates, max_layer, radius):
                     best_path = path
 
                 count += 1
-                print('processed {} of {} links for this layer'.format(
-                    count, total_links), end='\r', flush=True
-                )
+                LOGGER.info('processed {} of {} links for layer {}'.format(
+                    count, total_links, layer,
+                ))
 
             try:
                 if len(best_path) >= 2:
@@ -114,8 +117,6 @@ def match(redis, lua, coordinates, max_layer, radius):
             if newnode.cost < best_of_layer_cost:
                 best_of_layer = newnode
                 best_of_layer_cost = newnode.cost
-
-        print()
 
     curnode = best_of_layer
     lines = []

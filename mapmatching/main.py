@@ -1,8 +1,14 @@
 import argparse
 import sys
+import logging
 
 from mapmatching.task import TaskContext
 
+LOGGER = logging.getLogger(__name__)
+LOGGING_LEVELS = {
+    name: getattr(logging, name.upper())
+    for name in ('critical', 'error', 'warning', 'info', 'debug')
+}
 tc = TaskContext()
 
 
@@ -24,6 +30,7 @@ class DownloadTask:
             'y2', metavar='Y2', type=float,
             help='Y coordinate for the upper right corner of the bounding box')
         parser.add_argument('--output', '-o', type=argparse.FileType('w'),
+                            default=sys.stdout,
                             help='Write data to this file')
 
     def execute(self, args):
@@ -46,18 +53,12 @@ class DownloadTask:
         )
 
         if res.status_code != 200:
-            if args.verbosity > 1:
-                print('Status code:', res.status_code)
-
-            if args.verbosity > 2:
-                print(res.text)
+            LOGGER.warning('got status code:', res.status_code)
+            LOGGER.debug(res.text)
 
             exit('Query failed')
 
-        if args.output is not None:
-            args.output.write(res.text)
-        else:
-            print(res.text)
+        args.output.write(res.text)
 
 
 @tc.task
@@ -102,12 +103,9 @@ class LoadTask:
                 for tag, value in element['tags'].items():
                     redis.set('base:way:{}:{}'.format(eid, tag), value)
 
-            if args.verbosity > 0:
-                print('loaded {}/{}'.format(i+1, total), end='\r', flush=True)
+            LOGGER.info('loaded {}/{}'.format(i+1, total))
 
-        if args.verbosity > 0:
-            print()
-            print('Done')
+        LOGGER.info('Done')
 
 
 @tc.task
@@ -116,7 +114,8 @@ class MatchTask:
 
     def add_arguments(self, parser):
         parser.add_argument(
-            'filename', metavar='FILE', type=argparse.FileType('r')
+            'filename', metavar='FILE', type=argparse.FileType('r'),
+            help='Where to read the GPS points from',
         )
         parser.add_argument(
             '-l', '--layers', metavar='NUM', type=int, default=sys.maxsize,
@@ -125,6 +124,11 @@ class MatchTask:
         parser.add_argument(
             '-r', '--radius', metavar='NUM', type=int, default=150,
             help='radius in meters to use around gps points to find streets',
+        )
+        parser.add_argument(
+            '--output', '-o', type=argparse.FileType('w'),
+            default=sys.stdout,
+            help='Write data to this file',
         )
 
     def execute(self, redis, args):
@@ -135,7 +139,7 @@ class MatchTask:
         data = json.load(args.filename)
         coordinates = data['features'][0]['geometry']['coordinates']
 
-        match(
+        json_output = match(
             redis,
             LuaManager(redis),
             coordinates,
@@ -143,10 +147,17 @@ class MatchTask:
             args.radius,
         )
 
+        json.dump(json_output, args.output, indent=2)
+
 
 def main():
     # Parse arguments and execute
     args = tc.parse_args()
+
+    logging.basicConfig(
+        format='%(levelname)s:%(message)s',
+        level=LOGGING_LEVELS[args.verbosity],
+    )
 
     if args.func is None:
         tc.print_usage()
