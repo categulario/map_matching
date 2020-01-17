@@ -52,7 +52,11 @@ setup(
     ]),
 
     package_data={
-        'mapmatching': ['lua/scripts/*.lua', 'overpass/*.overpassql', 'version.txt'],
+        'mapmatching': [
+            'lua/scripts/*.lua',
+            'overpass/*.overpassql',
+            'version.txt',
+        ],
     },
 
     entry_points={
