@@ -21,6 +21,9 @@ Map-Matching Algorithm
    :target: https://gitlab.com/categulario/map_matching/pipelines
    :alt: Build Status
 
+**Im rewriting this in the Rust programming language: check the progress here:**
+
+https://gitlab.com/categulario/mapmatching-rs
 
 My implementation of the map matching algorithm from `this article <https://www.researchgate.net/publication/308856380_Fast_Hidden_Markov_Model_Map-Matching_for_Sparse_and_Noisy_Trajectories>`_ (Althought with some modifications). The goal is to get the streets from a gps track.
 
