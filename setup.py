@@ -15,7 +15,7 @@ setup(
     name='mapmatching',
     description='A map matching library',
     long_description=long_description,
-    url='https://github.com/categulairo/map_matching',
+    url='https://github.com/categulario/map_matching',
 
     version=version,
 
