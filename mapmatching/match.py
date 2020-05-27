@@ -23,7 +23,7 @@ class Node:
 
     def __str__(self):
         return '<Node:{} {}>'.format(
-            self.layer, self.cost, self.to_nearestnode
+            self.layer, self.cost
         )
 
     @staticmethod
