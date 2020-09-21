@@ -1,9 +1,8 @@
-from typing import Dict, Any
 import requests
 import os
 
 
-def download_from_overpass(x1: float, y1: float, x2: float, y2: float) -> Dict[str, Any]:
+def download_from_overpass(x1, y1, x2, y2):
     ''' queries the overpass API and returns the data as string '''
     # http://wiki.openstreetmap.org/wiki/Map_Features#Special_road_types
     with open(os.path.join(
@@ -27,7 +26,7 @@ def download_from_overpass(x1: float, y1: float, x2: float, y2: float) -> Dict[s
     return res.json()
 
 
-def load_to_redis(data: Dict[str, Any], redis):
+def load_to_redis(data, redis):
     ''' loads the given data to redis '''
     for i, element in enumerate(data['elements']):
         etype = element['type']

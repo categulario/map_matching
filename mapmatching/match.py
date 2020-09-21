@@ -59,13 +59,16 @@ def match(redis, lua, coordinates, max_layer, radius):
                     # routed
                     continue
 
+                if (parent is not None) and (parent.skip_node is not None):
+                    skip_node = parent.skip_node
+                else:
+                    skip_node = 'None'
+
                 try:
                     length, path = lua.a_star(args=[
                         nearestnodef,
                         nearestnodet,
-                        parent.skip_node
-                        if (parent is not None) and (parent.skip_node is not None)
-                        else 'None',
+                        skip_node,
                     ])
                 except TypeError:
                     continue  # no route from start to end
