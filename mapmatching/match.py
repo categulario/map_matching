@@ -33,14 +33,14 @@ class Node:
 
 def match(redis, lua, coordinates, max_layer, radius):
     closest_ways = [
-        lua.ways_from_gps(args=[radius]+coords) for coords in coordinates
+        lua.ways_from_gps(args=[radius] + coords) for coords in coordinates
     ]
 
     parents = dict()
 
     for layer in range(1, min(max_layer, len(coordinates))):
         LOGGER.info('processing layer {}'.format(layer))
-        total_links = len(closest_ways[layer-1])*len(closest_ways[layer])
+        total_links = len(closest_ways[layer - 1]) * len(closest_ways[layer])
         count = 0
 
         best_of_layer = None
@@ -51,8 +51,8 @@ def match(redis, lua, coordinates, max_layer, radius):
             best_parent = None
             best_path = None
 
-            for wayf, nearestnodef in closest_ways[layer-1]:  # f for from
-                parent = parents.get(Node.hash(layer-1, wayf))
+            for wayf, nearestnodef in closest_ways[layer - 1]:  # f for from
+                parent = parents.get(Node.hash(layer - 1, wayf))
 
                 if layer > 1 and parent is None:
                     # these nodes are not useful as their parents couldn't be
@@ -64,8 +64,7 @@ def match(redis, lua, coordinates, max_layer, radius):
                         nearestnodef,
                         nearestnodet,
                         parent.skip_node
-                        if (parent is not None) and
-                           (parent.skip_node is not None)
+                        if (parent is not None) and (parent.skip_node is not None)
                         else 'None',
                     ])
                 except TypeError:
@@ -74,10 +73,10 @@ def match(redis, lua, coordinates, max_layer, radius):
                 # difference between path length and great circle distance
                 # between the two gps points
                 curcost = math.log(abs(
-                    length - d(*(coordinates[layer-1]+coordinates[layer]))
+                    length - d(*(coordinates[layer - 1] + coordinates[layer]))
                 ))
                 # distance between start of path and first gps point
-                curcost += d(*(coordinates[layer-1] + list(map(
+                curcost += d(*(coordinates[layer - 1] + list(map(
                     float, redis.geopos('base:nodehash', nearestnodef)[0]
                 ))))
                 # distance between end of path and second gps point

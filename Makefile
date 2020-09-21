@@ -6,4 +6,4 @@ pytest:
 	pytest -xvv
 
 lint:
-	flake8 --exclude=.env,.tox,dist,docs,build,*.egg .
+	flake8 --exclude=.env,.tox,dist,docs,build,*.egg,.venv .
