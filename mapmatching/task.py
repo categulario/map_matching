@@ -52,9 +52,9 @@ class TaskContext:
             if redis_param_index is None:
                 new_args = args
             else:
-                new_args = args[:redis_param_index-1] + \
+                new_args = args[:redis_param_index - 1] + \
                     (self.get_redis(args[0]),) + \
-                    args[redis_param_index-1:]
+                    args[redis_param_index - 1:]
 
             return obj.execute(*new_args, **kwds)
 

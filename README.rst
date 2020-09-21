@@ -55,8 +55,8 @@ Or install from source:
    $ cd mapmatching
    $ python setup.py install
 
-Usage
------
+CLI Usage
+---------
 
 Download data from OpenStreetMaps:
 
@@ -69,7 +69,7 @@ And load it to redis, by default it loads it to database 1 instead of redis defa
 
 .. code:: bash
 
-   $ mapmatching load streets.json
+   $ mapmatching load -f streets.json
 
 The two previous commands can be chained:
 
@@ -90,3 +90,42 @@ Optionally visualize it in the browser:
 
    $ pip install geojsonio
    $ geojsonio output.json
+
+if the output is too big you might need to copy+paste the contents of the output file into http://geojson.io
+
+Python API
+----------
+
+You can also import this as a module and use it in your python code. You'll still need a running redis instance.
+
+.. code:: python
+
+   import json
+
+   from redis import Redis
+
+   from mapmatching.match import match
+   from mapmatching.lua import LuaManager
+   from mapmatching.data import download_from_overpass, load_to_redis
+
+   data = download_from_overpass(-96.99107360839844, 19.441181182861328, -96.846435546875, 19.59616470336914)
+
+   redis = Redis(host='localhost', port='6379', db=0)
+
+   load_to_redis(data, redis)
+
+   with open('data/route.geojson', 'r') as routefile:
+      route = json.load(routefile)
+
+   coordinates = route['features'][0]['geometry']['coordinates']
+
+   json_output = match(
+      redis,
+      LuaManager(redis),
+      coordinates,
+      10,  # How many points to process
+      50,  # Radius in meters to use in the search for close points
+   )
+
+   with open('output.json', 'w') as outputfile:
+      json.dump(json_output, outputfile, indent=2)

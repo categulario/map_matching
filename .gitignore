@@ -1,7 +1,8 @@
-.env/
+.env
 __pycache__/
 Pipfile*
 .eggs/
 *.egg-info/
 build/
 dist/
+.venv/

@@ -1,8 +1,10 @@
 import argparse
 import sys
 import logging
+import json
 
 from mapmatching.task import TaskContext
+from mapmatching.data import download_from_overpass, load_to_redis
 
 LOGGER = logging.getLogger(__name__)
 LOGGING_LEVELS = {
@@ -34,32 +36,9 @@ class DownloadTask:
                             help='Write data to this file')
 
     def execute(self, args):
-        import requests
-        import os
+        data = download_from_overpass(args.x1, args.y1, args.x2, args.y2)
 
-        # http://wiki.openstreetmap.org/wiki/Map_Features#Special_road_types
-        with open(os.path.join(
-            os.path.dirname(__file__),
-            'overpass/streets.overpassql'
-        )) as queryfile:
-            query = queryfile.read().format(
-                x1=args.x1,
-                y1=args.y1,
-                x2=args.x2,
-                y2=args.y2,
-            )
-
-        res = requests.post(
-            'http://overpass-api.de/api/interpreter', data=query,
-        )
-
-        if res.status_code != 200:
-            LOGGER.warning('got status code:', res.status_code)
-            LOGGER.debug(res.text)
-
-            exit('Query failed')
-
-        args.output.write(res.text)
+        args.output.write(json.dumps(data))
 
 
 @tc.task
@@ -73,40 +52,9 @@ class LoadTask:
             help='File to read data from, defaults to stdin')
 
     def execute(self, redis, args):
-        import json
-
         data = json.load(args.file)
-        total = len(data['elements'])
 
-        for i, element in enumerate(data['elements']):
-            etype = element['type']
-            eid = element['id']
-
-            if etype == 'node':
-                # load to GEOHASH with ID
-                redis.geoadd(
-                    'base:nodehash', element['lon'], element['lat'], eid
-                )
-                # add to node count
-                redis.pfadd('base:node:count', eid)
-
-            elif etype == 'way':
-                # add nodes to way
-                redis.rpush('base:way:{}:nodes'.format(eid), *element['nodes'])
-                # add to way count
-                redis.pfadd('base:way:count', eid)
-
-                # add this way to node relations
-                for node in element['nodes']:
-                    redis.rpush('base:node:{}:ways'.format(node), eid)
-
-                # add this way's tags
-                for tag, value in element['tags'].items():
-                    redis.set('base:way:{}:{}'.format(eid, tag), value)
-
-            LOGGER.info('loaded {}/{}'.format(i+1, total))
-
-        LOGGER.info('Done')
+        load_to_redis(data, redis)
 
 
 @tc.task
