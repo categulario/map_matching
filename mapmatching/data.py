@@ -35,7 +35,7 @@ def load_to_redis(data, redis):
         if etype == 'node':
             # load to GEOHASH with ID
             redis.geoadd(
-                'base:nodehash', element['lon'], element['lat'], eid
+                'base:nodehash', (element['lon'], element['lat'], eid)
             )
             # add to node count
             redis.pfadd('base:node:count', eid)
