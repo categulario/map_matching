@@ -25,22 +25,28 @@ Map-Matching Algorithm
 
 https://gitlab.com/categulario/mapmatching-rs
 
-My implementation of the map matching algorithm from `this article <https://www.researchgate.net/publication/308856380_Fast_Hidden_Markov_Model_Map-Matching_for_Sparse_and_Noisy_Trajectories>`_ (Althought with some modifications). The goal is to get the streets from a gps track.
+My implementation of the map matching algorithm from `this article
+<https://www.researchgate.net/publication/308856380_Fast_Hidden_Markov_Model_Map-Matching_for_Sparse_and_Noisy_Trajectories>`_
+(Althought with some modifications). The goal is to get the streets from a gps
+track.
 
 This is how it looks like:
 
-.. image:: https://categulario.tk/map_matching_result.png
-   :target: https://categulario.tk/map_matching_result.png
+.. image:: https://categulario.xyz/map_matching_result.png
+   :target: https://categulario.xyz/map_matching_result.png
    :alt: Output of the example run
 
-The gray line is the gps trace and the colored lines describe the map-matched most-likely route in the streets for the vehicle.
+The gray line is the gps trace and the colored lines describe the map-matched
+most-likely route in the streets for the vehicle.
 
-For reference read `the resulting article <https://categulario.tk/mapmatching.pdf>`_.
+For reference read
+`the resulting article <https://categulario.xyz/mapmatching.pdf>`_.
 
 Setup
 -----
 
-You'll need python 3.5+ and a redis server running. The usage of a virtual environment is recommended.
+You'll need python 3.5+ and a redis server running. The usage of a virtual
+environment is recommended.
 
 Install from pypi:
 
@@ -65,7 +71,8 @@ Download data from OpenStreetMaps:
    $ mapmatching download -h
    $ mapmatching download -96.99107360839844 19.441181182861328 -96.846435546875 19.59616470336914 -o streets.json
 
-And load it to redis, by default it loads it to database 1 instead of redis default of 0.
+And load it to redis, by default it loads it to database 1 instead of redis
+default of 0.
 
 .. code:: bash
 
@@ -77,7 +84,9 @@ The two previous commands can be chained:
 
    $ mapmatching download -96.99107360839844 19.441181182861328 -96.846435546875 19.59616470336914 | mapmatching load
 
-Then run the match task with a geojson file with a single gps track. A sample track that works with the sample bounding box is contained in the ``data/`` directory of the repository.
+Then run the match task with a geojson file with a single gps track. A sample
+track that works with the sample bounding box is contained in the ``data/``
+directory of the repository.
 
 .. code:: bash
 
@@ -91,12 +100,14 @@ Optionally visualize it in the browser:
    $ pip install geojsonio
    $ geojsonio output.json
 
-if the output is too big you might need to copy+paste the contents of the output file into http://geojson.io
+if the output is too big you might need to copy+paste the contents of the
+output file into http://geojson.io
 
 Python API
 ----------
 
-You can also import this as a module and use it in your python code. You'll still need a running redis instance.
+You can also import this as a module and use it in your python code. You'll
+still need a running redis instance.
 
 .. code:: python
 

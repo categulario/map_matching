@@ -2,7 +2,7 @@
 
 // gather results
 (
-  way["highway"][highway!~"service,footway,steps,pedestrian,escape,raceway,bridleway,cycleway"]({y1},{x1},{y2},{x2});
+  way["highway"][highway!~"service|footway|steps|pedestrian|escape|raceway|bridleway|cycleway|path"]({y1},{x1},{y2},{x2});
 );
 
 // print results
