@@ -66,7 +66,7 @@ setup(
     },
 
     install_requires=[
-        'redis',
+        'redis >= 3.5',
         'requests',
     ],
 
